@@ -39,7 +39,7 @@ interface MarkedDates {
 
 const DayComponent: React.FC<DayComponentProps> = ({ date, marking, onPress }) => {
   const dayOfWeek = new Date(date.timestamp).getDay();
-  const dateToCheck = new Date(date.timestamp).toISOString().split("T")[0];
+  const dateToCheck = new Date(date.timestamp);
 
   const textColor =
     dayOfWeek === 6
@@ -49,7 +49,7 @@ const DayComponent: React.FC<DayComponentProps> = ({ date, marking, onPress }) =
       : colors.textInLight;
 
   const opacity =
-    dateToCheck > new Date().toISOString().split("T")[0] ? 0.3 : 1;
+    dateToCheck > new Date() ? 0.3 : 1;
 
   const renderDots = () => {
     if (!marking?.dot) return null;
@@ -123,38 +123,40 @@ const CustomCalendar: React.FC = () => {
     }
   };
 
-  const handleDayPress = useCallback((day: DateData | null) => {
-    if (day!.timestamp < today.getTime()) {
-      const date = new Date(
-        day!.year,
-        day!.month - 1,
-        day!.day,
-        today.getHours(),
-        today.getMinutes(),
-        today.getSeconds(),
-        today.getMilliseconds()
-      );
-      const formattedDate = date.toISOString();
-
-      console.log("Send: " + formattedDate);
-      console.log("Send type: " + typeof(formattedDate));
-      
-      DatabaseService.existingDateOfPost(date)
-        .then((exists) => {
-          if (exists) {
-            console.log(`There is already a post on ${date}.`);
-          } else {
-            setSelectedDate(date);
-            router.push({
-              pathname: "PickFeelingScreen",
-              params: { formattedDate },
-            });
-          }
-        })
-        .catch((error) => {
-          console.error("Error:", error);
+  const handleDayPress = useCallback((day: Date | DateData) => {
+    const date = day instanceof Date 
+      ? today 
+      : new Date(
+          day.year, 
+          day.month - 1, 
+          day.day, 
+          today.getHours(), 
+          today.getMinutes(), 
+          today.getSeconds(), 
+          today.getMilliseconds()
+        );
+  
+    const formattedDate = date.toISOString();
+  
+    console.log(`Send: ${formattedDate}`);
+    console.log(`Send type: ${typeof formattedDate}`);
+    
+    DatabaseService.existingDateOfPost(date)
+      .then((exists) => {
+        if (exists) {
+          console.log(`There is already a post on ${date}.`);
+          return;
+        }
+  
+        setSelectedDate(date);
+        router.push({
+          pathname: "PickFeelingScreen",
+          params: { formattedDate },
         });
-    }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
   }, [today]);
 
   const calendarTheme: Theme = {
@@ -185,7 +187,7 @@ const CustomCalendar: React.FC = () => {
       <View style={styles.submitContainer}>
         <TouchableOpacity
           style={styles.submitButton}
-          onPress={() => handleDayPress(null)}
+          onPress={() => handleDayPress(today)}
         >
           <Text style={styles.submitTitle}>
             <AntDesign name="plus" size={24} color="black" />

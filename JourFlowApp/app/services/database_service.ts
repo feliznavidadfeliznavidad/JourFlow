@@ -12,6 +12,14 @@ interface Post {
   DateTime: string;
 }
 
+interface User {
+  id: number;
+  userName: string;
+  JWT: string;
+  ggAccessToken: string;
+  refreshJWTToken: string;
+}
+
 interface Imgs {
   id: number;
   postId: number;
@@ -28,49 +36,49 @@ const DatabaseService = {
   async init() {
     try {
       await this.db.execAsync(`
-          PRAGMA foreign_keys = ON;   
-          
-          CREATE TABLE IF NOT EXISTS User (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            userName TEXT NULL,
-            JWT TEXT NOT NULL,
-            ggAccessToken TEXT NOT NULL,
-            refreshJWTToken TEXT NOT NULL
-          );
-          
-          CREATE TABLE IF NOT EXISTS Posts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            userId INTEGER,
-            Title TEXT NOT NULL,
-            IconPath TEXT NOT NULL,
-            Content TEXT NOT NULL,
-            DateTime TEXT NOT NULL,
-            FOREIGN KEY(userId) REFERENCES User(id) ON DELETE CASCADE
-          );
-  
-          CREATE TABLE IF NOT EXISTS IMGs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            postId INTEGER,
-            url TEXT NULL,
-            FOREIGN KEY(postId) REFERENCES Posts(id) ON DELETE CASCADE
-          );
-        `);
+        PRAGMA foreign_keys = ON;   
+        
+        CREATE TABLE IF NOT EXISTS User (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          userName TEXT NULL,
+          JWT TEXT NOT NULL,
+          ggAccessToken TEXT NOT NULL,
+          refreshJWTToken TEXT NOT NULL
+        );
+        
+        CREATE TABLE IF NOT EXISTS Posts (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          userId INTEGER,
+          Title TEXT NOT NULL,
+          IconPath TEXT NOT NULL,
+          Content TEXT NOT NULL,
+          PostDate TEXT NOT NULL,
+          UpdateDate TEXT NOT NULL,
+          FOREIGN KEY(userId) REFERENCES User(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS IMGs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          postId INTEGER,
+          url TEXT NULL,
+          FOREIGN KEY(postId) REFERENCES Posts(id) ON DELETE CASCADE
+        );
+      `);
       console.log("Database initialized successfully");
     } catch (error) {
       console.error("Database initialization error:", error);
     }
-    this.insertUser();
   },
 
   async insertUser() {
     try {
       await this.db.execAsync(`
-          INSERT INTO User (userName, JWT, ggAccessToken, refreshJWTToken) 
-          VALUES 
-            ('Nicole', 'jwt ne', 'gg access token', 'refresh token'),
-            ('Benjamin', 'jwt ne', 'gg access token', 'refresh token'),
-            ('David', 'jwt ne', 'gg access token', 'refresh token')
-        `);
+        INSERT INTO User (userName, JWT, ggAccessToken, refreshJWTToken) 
+        VALUES 
+          ('Nicole', 'jwt ne', 'gg access token', 'refresh token'),
+          ('Benjamin', 'jwt ne', 'gg access token', 'refresh token'),
+          ('David', 'jwt ne', 'gg access token', 'refresh token')
+      `);
     } catch (error) {
       console.error("Error inserting user:", error);
       throw error;
@@ -80,13 +88,13 @@ const DatabaseService = {
   async insertPost() {
     try {
       await this.db.execAsync(`
-          INSERT INTO Posts (userId, Title, IconPath, Content, DateTime) 
-          VALUES 
-            (1, 'Exploring the City', 'angry', 'This post is about the best spots in the city for sightseeing.', '2024 10 10'),
-            (1, 'Cooking Tips', 'angry', 'A guide to the most common cooking mistakes and how to avoid them.', '2024 10 12'),
-            (1, 'Tech Trends', 'angry', 'Here are the latest trends in technology you should watch for in 2025.', '2024 11 10'),
-            (1, 'Travel Essentials', 'angry', 'What to pack when traveling abroad to ensure a smooth trip.', '2024 11 12');
-        `);
+        INSERT INTO Posts (userId, Title, IconPath, Content, PostDate, UpdateDate) 
+        VALUES 
+          (1, 'Exploring the City', 'angry', 'This post is about the best spots in the city for sightseeing.', '2024-10-10T00:00:00.000Z', '2024-10-10T00:00:00.000Z'),
+          (1, 'Cooking Tips', 'angry', 'A guide to the most common cooking mistakes and how to avoid them.', '2024-10-12T00:00:00.000Z', '2024-10-12T00:00:00.000Z'),
+          (1, 'Tech Trends', 'angry', 'Here are the latest trends in technology you should watch for in 2025.', '2024-11-10T00:00:00.000Z', '2024-11-10T00:00:00.000Z'),
+          (1, 'Travel Essentials', 'angry', 'What to pack when traveling abroad to ensure a smooth trip.', '2024-11-12T00:00:00.000Z', '2024-11-12T00:00:00.000Z')
+      `);
     } catch (error) {
       console.error("Error inserting post:", error);
       throw error;
@@ -98,6 +106,15 @@ const DatabaseService = {
       return await this.db.getAllAsync<Post>("SELECT * FROM Posts");
     } catch (error) {
       console.error("Error fetching posts:", error);
+      throw error;
+    }
+  },
+  
+  async getUsers(): Promise<User[]> {
+    try {
+      return await this.db.getAllAsync<User>("SELECT * FROM User");
+    } catch (error) {
+      console.error("Error fetching users:", error);
       throw error;
     }
   },
