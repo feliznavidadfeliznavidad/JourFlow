@@ -6,6 +6,7 @@ import {
   View,
   Platform,
   ScrollView,
+  Alert,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -35,7 +36,9 @@ const Content = () => {
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
   const [images, setImages] = useState<{ uri: string }[]>([]);
-  const [existingPost, setExistingPost] = useState(false); // Thêm state để track trạng thái post
+  const [existingPost, setExistingPost] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [currentPostId, setCurrentPostId] = useState<number | null>(null);
 
   const { icon, formattedDate } = useLocalSearchParams<{ icon: string; formattedDate: string }>();
 
@@ -49,17 +52,15 @@ const Content = () => {
       const exists = await DatabaseService.existingDateOfPost(date);
   
       if (exists) {
-        setExistingPost(true); // Set trạng thái là đã tồn tại post
-        
-        // Lấy thông tin bài viết
+        setExistingPost(true);
         const post = await DatabaseService.getPostByDate(date);
   
         if (post && post.length > 0) {
           setPostData(post);
           setTitle(post[0].Title);
           setContent(post[0].Content);
+          setCurrentPostId(post[0].id);
   
-          // Lấy danh sách hình ảnh liên quan đến bài viết
           const images = await DatabaseService.getImagesByPostId(post[0].id);
   
           if (images && images.length > 0) {
@@ -68,12 +69,90 @@ const Content = () => {
           }
         }
       } else {
-        setExistingPost(false); // Set trạng thái là chưa tồn tại post
+        setExistingPost(false);
+        setIsEditing(false);
       }
     } catch (error) {
       console.error("Error in checkExists:", error);
     }
   };
+
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleUpdate = async () => {
+    if (!title.trim() && !content.trim()) {
+      Alert.alert("Error", "Please enter a title or content");
+      return;
+    }
+
+    try {
+      const savedImgPaths = await saveImgsToLocalStorage();
+      
+      // Update post in database
+      if (currentPostId) {
+        await db.runAsync(
+          `
+          UPDATE Posts 
+          SET Title = ?, Content = ?, UpdateDate = ?
+          WHERE id = ?
+          `,
+          [title, content, new Date().toISOString(), currentPostId]
+        );
+
+        // Delete existing images
+        await db.runAsync(
+          `DELETE FROM IMGs WHERE postId = ?`,
+          [currentPostId]
+        );
+
+        // Insert new images
+        if (savedImgPaths.length > 0) {
+          await Promise.all(
+            savedImgPaths.map(async (imgPath) => {
+              await db.runAsync(
+                `INSERT INTO IMGs (postId, url) VALUES (?, ?)`,
+                [currentPostId, imgPath]
+              );
+            })
+          );
+        }
+
+        setIsEditing(false);
+        Alert.alert("Success", "Post updated successfully");
+        await checkExists(); // Refresh data
+      }
+    } catch (error) {
+      console.error("Error in handleUpdate: ", error);
+      Alert.alert("Error", "Failed to update post. Please try again.");
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      if (currentPostId) {
+        // Delete images first (due to foreign key constraint)
+        await db.runAsync(
+          `DELETE FROM IMGs WHERE postId = ?`,
+          [currentPostId]
+        );
+
+        // Delete post
+        await db.runAsync(
+          `DELETE FROM Posts WHERE id = ?`,
+          [currentPostId]
+        );
+
+        Alert.alert("Success", "Post deleted successfully");
+        router.replace("(homepage)/HomeScreen");
+      }
+    } catch (error) {
+      console.error("Error in handleDelete: ", error);
+      Alert.alert("Error", "Failed to delete post. Please try again.");
+    }
+  };
+
 
   // Hàm chọn ảnh
   const pickImage = async () => {
@@ -181,19 +260,25 @@ const Content = () => {
                 content={content}
                 setTitle={setTitle}
                 setContent={setContent}
-                isReadOnly={existingPost} // Truyền prop để control chế độ read-only
+                isReadOnly={existingPost && !isEditing}
               />
             </ScrollView>
-            {/* Chỉ hiển thị Footer nếu chưa tồn tại post */}
-            {!existingPost && (
-              <Footer onImagePick={pickImage} onSubmit={handleSubmit} />
-            )}
+            <Footer 
+              onImagePick={pickImage}
+              onSubmit={handleSubmit}
+              onEdit={handleEdit}
+              onUpdate={handleUpdate}
+              onDelete={handleDelete}
+              isExistingPost={existingPost}
+              isEditing={isEditing}
+            />
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </FontLoader>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
