@@ -1,15 +1,31 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import FontLoader from "../services/FontsLoader";
-import Feather from '@expo/vector-icons/Feather';
+import Feather from "@expo/vector-icons/Feather";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { Image } from "react-native";
+import { router } from "expo-router";
+import DatabaseService from "../services/database_service";
 
 const SettingScreen = () => {
   const handlePress = () => {
     alert("Comming Soon!");
+  };
+
+  const handlePressSignOut = () => {
+    router.navigate("/");
+  };
+
+  const handlePressDeleteAll = async () => {
+    try {
+      await DatabaseService.clearDatabase();
+      alert("All posts have been deleted successfully!");
+    } catch (error: any) {
+      alert(error.message);
+      console.error("Error deleting all posts:", error);
+    }
   };
 
   return (
@@ -21,12 +37,16 @@ const SettingScreen = () => {
             <View style={styles.profileContent}>
               <Image
                 style={styles.profileImage}
-                source={{ uri: 'https://your-profile-image-url.com' }}
+                source={{ uri: "https://your-profile-image-url.com" }}
               />
               <View style={styles.profileInfo}>
                 <Text style={styles.username}>ByKimThe</Text>
                 <View style={styles.zodiacContainer}>
-                  <MaterialCommunityIcons name="zodiac-leo" size={20} color="#9747FF" />
+                  <MaterialCommunityIcons
+                    name="zodiac-leo"
+                    size={20}
+                    color="#9747FF"
+                  />
                   <Text style={styles.zodiacText}>leo</Text>
                 </View>
               </View>
@@ -36,42 +56,88 @@ const SettingScreen = () => {
             </Pressable>
           </View>
 
-          <View style={styles.settingsList}>
-            <Pressable style={styles.settingItem} onPress={() => handlePress()}>
-              <Feather name="bell" size={24} color="black" />
-              <Text style={styles.settingText}>Notifications</Text>
-            </Pressable>
+          <ScrollView 
+            style={styles.settingsList}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.settingsListContent}
+          >
+              <Pressable
+                style={styles.settingItem}
+                onPress={() => handlePress()}
+              >
+                <Feather name="bell" size={24} color="black" />
+                <Text style={styles.settingText}>Notifications</Text>
+              </Pressable>
 
-            <Pressable style={styles.settingItem} onPress={() => handlePress()}>
-              <Feather name="type" size={24} color="black" />
-              <Text style={styles.settingText}>Font</Text>
-            </Pressable>
+              <Pressable
+                style={styles.settingItem}
+                onPress={() => handlePress()}
+              >
+                <Feather name="type" size={24} color="black" />
+                <Text style={styles.settingText}>Font</Text>
+              </Pressable>
 
-            <Pressable style={styles.settingItem} onPress={() => handlePress()}>
-              <Feather name="moon" size={24} color="black" />
-              <Text style={styles.settingText}>Dark mode</Text>
-            </Pressable>
+              <Pressable
+                style={styles.settingItem}
+                onPress={() => handlePress()}
+              >
+                <Feather name="moon" size={24} color="black" />
+                <Text style={styles.settingText}>Dark mode</Text>
+              </Pressable>
 
-            <Pressable style={styles.settingItem} onPress={() => handlePress()}>
-              <Feather name="cloud" size={24} color="black" />
-              <Text style={styles.settingText}>Backup / Restore</Text>
-            </Pressable>
+              <Pressable
+                style={styles.settingItem}
+                onPress={() => handlePress()}
+              >
+                <Feather name="cloud" size={24} color="black" />
+                <Text style={styles.settingText}>Backup / Restore</Text>
+              </Pressable>
 
-            <Pressable style={styles.settingItem} onPress={() => handlePress()}>
-              <Feather name="globe" size={24} color="black" />
-              <Text style={styles.settingText}>Language</Text>
-            </Pressable>
+              <Pressable
+                style={styles.settingItem}
+                onPress={() => handlePress()}
+              >
+                <Feather name="globe" size={24} color="black" />
+                <Text style={styles.settingText}>Language</Text>
+              </Pressable>
 
-            <Pressable style={styles.settingItem} onPress={() => handlePress()}>
-              <Feather name="download" size={24} color="black" />
-              <Text style={styles.settingText}>Export</Text>
-            </Pressable>
+              <Pressable
+                style={styles.settingItem}
+                onPress={() => handlePress()}
+              >
+                <Feather name="download" size={24} color="black" />
+                <Text style={styles.settingText}>Export</Text>
+              </Pressable>
 
-            <Pressable style={styles.settingItem} onPress={() => handlePress()}>
-              <Feather name="lock" size={24} color="black" />
-              <Text style={styles.settingText}>Lock Screen</Text>
-            </Pressable>
-          </View>
+              <Pressable
+                style={styles.settingItem}
+                onPress={() => handlePress()}
+              >
+                <Feather name="lock" size={24} color="black" />
+                <Text style={styles.settingText}>Lock Screen</Text>
+              </Pressable>
+
+              <Pressable
+                style={styles.settingItem}
+                onPress={() => handlePressSignOut()}
+              >
+                <Feather name="log-out" size={24} color="black" />
+                <Text style={styles.settingText}>Sign out</Text>
+              </Pressable>
+
+              <View>
+                <Text style={styles.textDev}>Developer Tools</Text>
+              </View>
+
+              <Pressable
+                style={styles.settingItem}
+                onPress={() => handlePressDeleteAll()}
+              >
+                <Feather name="trash" size={24} color="black" />
+                <Text style={styles.settingText}>Remove All Data</Text>
+              </Pressable>
+              
+          </ScrollView>
         </View>
       </SafeAreaView>
     </FontLoader>
@@ -83,7 +149,7 @@ export default SettingScreen;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#FAF7F0",  
+    backgroundColor: "#FAF7F0",
   },
   title: {
     fontFamily: "Kalam-Regular",
@@ -139,9 +205,13 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   settingsList: {
+    flex: 1,
+  },
+  settingsListContent: {
     gap: 24,
     paddingLeft: 8,
     paddingRight: 8,
+    paddingBottom: 24, 
   },
   settingItem: {
     flexDirection: "row",
@@ -152,5 +222,11 @@ const styles = StyleSheet.create({
     fontFamily: "Kalam-Regular",
     fontSize: 18,
     color: "#333333",
+  },
+  textDev: {
+    fontFamily: "Kalam-Regular",
+    fontSize: 16,
+    color: "red",
+    textAlign: "center",
   },
 });

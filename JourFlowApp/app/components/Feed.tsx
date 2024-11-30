@@ -20,7 +20,6 @@ interface Post {
   PostDate: string;
   UpdateDate: string;
 }
-
 const Feed = () => {
   const [posts, setPosts] = useState<Post[]>([]);
 
@@ -33,24 +32,6 @@ const Feed = () => {
       console.error("Error fetching posts:", error);
     }
   }
-
-  const deleteall = async () => {
-    try {
-      await DatabaseService.clearDatabase();
-      setPosts([]);
-    } catch (error) {
-      console.error("Error deleting all posts:", error);
-    }
-  };
-
-  const showImgsDB = async () => {
-    try {
-      const data = await DatabaseService.getImages();
-      console.log(data);
-    } catch (error) {
-      console.error("Error fetching images from database:", error);
-    }
-  };
   
   useEffect(() => {
     loadPosts();
@@ -59,12 +40,6 @@ const Feed = () => {
   return (
     <SafeAreaView>
       <View style={styles.feedContainer}>
-        <Pressable onPress={() => deleteall()}>
-          <Text>delete all</Text>
-        </Pressable>
-        <Pressable onPress={() => showImgsDB()}>
-          <Text>Show Imgs DB</Text>
-        </Pressable>
         <ScrollView style={styles.scroll}>
           {posts.map((post, index) => {
             return (
