@@ -10,6 +10,7 @@ import React, { useEffect, useState } from "react";
 import Card from "./Card";
 import icons, { IconPath } from "../../assets/icon/icon";
 import DatabaseService from "../services/database_service";
+import Feather from "@expo/vector-icons/Feather";
 
 interface Post {
   id: number;
@@ -31,8 +32,12 @@ const Feed = () => {
     } catch (error) {
       console.error("Error fetching posts:", error);
     }
-  }
-  
+  };
+
+  const handlePressSearch = () => {
+    alert("Comming Soon!");
+  };
+
   useEffect(() => {
     loadPosts();
   }, []);
@@ -40,6 +45,11 @@ const Feed = () => {
   return (
     <SafeAreaView>
       <View style={styles.feedContainer}>
+        <View style={styles.header}>
+          <Pressable onPress={() => handlePressSearch()}>
+            <Feather name="search" size={24} color="black" />
+          </Pressable>
+        </View>
         <ScrollView style={styles.scroll}>
           {posts.map((post, index) => {
             return (
@@ -70,6 +80,16 @@ const styles = StyleSheet.create({
     width: "100%",
     display: "flex",
     alignItems: "center",
+  },
+  header: {
+    padding: 16,
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "flex-end",
+    marginRight: 10,
+  },
+  searchButton: {
+    paddingHorizontal: 10,
   },
   scroll: {
     width: "100%",

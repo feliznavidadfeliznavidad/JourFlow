@@ -49,7 +49,7 @@ export const Footer: React.FC<FooterProps> = ({
           <MaterialIcons name="edit" size={28} color="black" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-          <MaterialIcons name="delete" size={28} color="red" />
+          <MaterialIcons name="delete" size={28} color="black" />
         </TouchableOpacity>
       </View>
     );
@@ -62,7 +62,7 @@ export const Footer: React.FC<FooterProps> = ({
           <Feather name="image" size={28} color="black" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.updateButton} onPress={onUpdate}>
-          <MaterialIcons name="update" size={28} color="green" />
+          <MaterialIcons name="update" size={28} color="black" />
         </TouchableOpacity>
       </View>
     );
