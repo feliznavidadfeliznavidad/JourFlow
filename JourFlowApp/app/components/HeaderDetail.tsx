@@ -9,6 +9,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ iconSource, receiveDate }) => {
+
   return (
     <View style={styles.header}>
       <LottieView source={iconSource} autoPlay loop style={styles.feelingState} />

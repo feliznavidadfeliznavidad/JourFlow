@@ -6,15 +6,14 @@ import {
   Image,
   Pressable,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import LottieView from "lottie-react-native";
 import icons, { IconPath } from "../../assets/icon/icon";
 import FontLoader from "../services/FontsLoader";
 import date_format from "../services/dateFormat_service";
 const { width, height } = Dimensions.get("window");
-import { parse } from "date-fns";
 import DatabaseService from "../services/database_service";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 
 interface Post {
   id: number;
@@ -37,9 +36,6 @@ const Card: React.FC<Post> = (Post) => {
 
   const dateString = new Date(Post.PostDate);
 
-  // const formattedDateString = dateString.replace(/ /g, "-");
-  // const receiveDate = parse(formattedDateString, "yyyy-MM-dd", new Date());
-
   const loadImgs = async () => {
     try {
       const data = await DatabaseService.getImagesByPostId(Post.id);
@@ -51,9 +47,11 @@ const Card: React.FC<Post> = (Post) => {
     }
   };
 
-  useEffect(() => {
-    loadImgs();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadImgs();
+    }, [])
+  );
 
   return (
     <FontLoader>

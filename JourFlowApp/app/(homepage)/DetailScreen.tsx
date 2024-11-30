@@ -39,12 +39,15 @@ const Content = () => {
   const [existingPost, setExistingPost] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentPostId, setCurrentPostId] = useState<number | null>(null);
+  const [currentIcon, setCurrentIcon] = useState<string>("normal");
 
   const { icon, formattedDate } = useLocalSearchParams<{ icon: string; formattedDate: string }>();
 
   const receiveDate = new Date(formattedDate);
-  const iconKey = Array.isArray(icon) ? icon[0] : icon;
-  const iconSource = iconKey && iconKey in icons ? icons[iconKey as IconPath] : icons["normal"];
+
+  const iconSource = icon ? 
+    (icon in icons ? icons[icon as IconPath] : icons["normal"]) :
+    (currentIcon in icons ? icons[currentIcon as IconPath] : icons["normal"]);
 
   const checkExists = async () => {
     try {
@@ -60,9 +63,11 @@ const Content = () => {
           setTitle(post[0].Title);
           setContent(post[0].Content);
           setCurrentPostId(post[0].id);
+          if (!icon) {
+            setCurrentIcon(post[0].IconPath);
+          }
   
           const images = await DatabaseService.getImagesByPostId(post[0].id);
-  
           if (images && images.length > 0) {
             const formattedImages = images.map((img) => ({ uri: img.url }));
             setImages(formattedImages);
@@ -71,6 +76,9 @@ const Content = () => {
       } else {
         setExistingPost(false);
         setIsEditing(false);
+        if (!icon) {
+          setCurrentIcon("normal");
+        }
       }
     } catch (error) {
       console.error("Error in checkExists:", error);
@@ -205,7 +213,7 @@ const Content = () => {
 
       const sanitizedTitle = title.replace(/'/g, "''");
       const sanitizedContent = content.replace(/'/g, "''");
-      const sanitizedIconPath = iconKey.replace(/'/g, "''");
+      const sanitizedIconPath = currentIcon.replace(/'/g, "''");
 
       const postResult = await db.runAsync(
         `
@@ -236,7 +244,7 @@ const Content = () => {
   };
 
   useEffect(() => {
-    checkExists();
+    checkExists();;
   }, []);
 
   return (
