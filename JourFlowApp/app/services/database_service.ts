@@ -1,7 +1,5 @@
 import * as SQLite from "expo-sqlite";
 import { IconPath } from "../../assets/icon/icon";
-import { DateData } from "react-native-calendars";
-import { format } from "date-fns";
 
 interface Post {
   id: number;
@@ -155,10 +153,14 @@ const DatabaseService = {
   },
 
   async existingDateOfPost(date: Date): Promise<boolean> {
-    const formattedDate = date.toISOString();
+    const formattedDate = date.toISOString().split('T')[0]; 
     try {
       const result = await this.db.getAllAsync<{ count: number }>(
+<<<<<<< HEAD
         `SELECT COUNT(*) as count FROM Posts WHERE PostDate = ?`,
+=======
+        `SELECT COUNT(*) as count FROM Posts WHERE DATE(DateTime) = ?`,
+>>>>>>> 3667b8096a2df8f7d473dd23c46b7ad48ea9f8a8
         [formattedDate]
       );
       const count = result[0]?.count;

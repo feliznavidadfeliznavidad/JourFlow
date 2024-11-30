@@ -9,10 +9,6 @@ import date_format from "../services/dateFormat_service";
 
 const PickFeeling = () => {
   const { formattedDate } = useLocalSearchParams<{ formattedDate: any }>();
-
-  console.log("Received: " + formattedDate)
-  console.log("Received type: " + typeof formattedDate)
-
   const receiveDate = new Date(formattedDate);
 
   const [isSelect, setSelect] = useState<number>(-1);
