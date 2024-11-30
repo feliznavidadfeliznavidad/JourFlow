@@ -31,7 +31,6 @@ interface Post {
 }
 
 const Content = () => {
-  const db = DatabaseService.db;
   const [postData, setPostData] = useState<Post[]>([]);
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
@@ -40,8 +39,6 @@ const Content = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentPostId, setCurrentPostId] = useState<number | null>(null);
   const [currentIcon, setCurrentIcon] = useState<string>("normal");
-
-  // const { icon, formattedDate } = useLocalSearchParams<{ icon: string; formattedDate: string }>();
 
   const params = useLocalSearchParams<{ icon?: string; formattedDate: string }>();
   const formattedDate = params.formattedDate;

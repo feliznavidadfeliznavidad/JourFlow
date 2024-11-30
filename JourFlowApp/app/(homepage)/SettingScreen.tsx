@@ -1,0 +1,156 @@
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import React from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
+import FontLoader from "../services/FontsLoader";
+import Feather from '@expo/vector-icons/Feather';
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { Image } from "react-native";
+
+const SettingScreen = () => {
+  const handlePress = () => {
+    alert("Comming Soon!");
+  };
+
+  return (
+    <FontLoader>
+      <SafeAreaView style={styles.safeArea}>
+        <Text style={styles.title}>Setting</Text>
+        <View style={styles.main}>
+          <View style={styles.cardProfile}>
+            <View style={styles.profileContent}>
+              <Image
+                style={styles.profileImage}
+                source={{ uri: 'https://your-profile-image-url.com' }}
+              />
+              <View style={styles.profileInfo}>
+                <Text style={styles.username}>ByKimThe</Text>
+                <View style={styles.zodiacContainer}>
+                  <MaterialCommunityIcons name="zodiac-leo" size={20} color="#9747FF" />
+                  <Text style={styles.zodiacText}>leo</Text>
+                </View>
+              </View>
+            </View>
+            <Pressable style={styles.editButton} onPress={() => handlePress()}>
+              <Feather name="external-link" size={24} color="black" />
+            </Pressable>
+          </View>
+
+          <View style={styles.settingsList}>
+            <Pressable style={styles.settingItem} onPress={() => handlePress()}>
+              <Feather name="bell" size={24} color="black" />
+              <Text style={styles.settingText}>Notifications</Text>
+            </Pressable>
+
+            <Pressable style={styles.settingItem} onPress={() => handlePress()}>
+              <Feather name="type" size={24} color="black" />
+              <Text style={styles.settingText}>Font</Text>
+            </Pressable>
+
+            <Pressable style={styles.settingItem} onPress={() => handlePress()}>
+              <Feather name="moon" size={24} color="black" />
+              <Text style={styles.settingText}>Dark mode</Text>
+            </Pressable>
+
+            <Pressable style={styles.settingItem} onPress={() => handlePress()}>
+              <Feather name="cloud" size={24} color="black" />
+              <Text style={styles.settingText}>Backup / Restore</Text>
+            </Pressable>
+
+            <Pressable style={styles.settingItem} onPress={() => handlePress()}>
+              <Feather name="globe" size={24} color="black" />
+              <Text style={styles.settingText}>Language</Text>
+            </Pressable>
+
+            <Pressable style={styles.settingItem} onPress={() => handlePress()}>
+              <Feather name="download" size={24} color="black" />
+              <Text style={styles.settingText}>Export</Text>
+            </Pressable>
+
+            <Pressable style={styles.settingItem} onPress={() => handlePress()}>
+              <Feather name="lock" size={24} color="black" />
+              <Text style={styles.settingText}>Lock Screen</Text>
+            </Pressable>
+          </View>
+        </View>
+      </SafeAreaView>
+    </FontLoader>
+  );
+};
+
+export default SettingScreen;
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#FAF7F0",  
+  },
+  title: {
+    fontFamily: "Kalam-Regular",
+    fontSize: 28,
+    textAlign: "center",
+    marginVertical: 20,
+  },
+  main: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  cardProfile: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#E5E5E5",
+    marginBottom: 24,
+  },
+  profileContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  profileImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 12,
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  username: {
+    fontFamily: "Kalam-Regular",
+    fontSize: 20,
+    marginBottom: 4,
+  },
+  zodiacContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  zodiacText: {
+    fontFamily: "Kalam-Regular",
+    fontSize: 16,
+    color: "#9747FF",
+    marginLeft: 4,
+  },
+  editButton: {
+    padding: 8,
+  },
+  settingsList: {
+    gap: 24,
+    paddingLeft: 8,
+    paddingRight: 8,
+  },
+  settingItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  settingText: {
+    fontFamily: "Kalam-Regular",
+    fontSize: 18,
+    color: "#333333",
+  },
+});

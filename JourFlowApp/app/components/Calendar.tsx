@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { Calendar, DateData } from "react-native-calendars";
 import { Theme } from "react-native-calendars/src/types";
-import { Dimensions, View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Dimensions, View, Text, StyleSheet, TouchableOpacity, Pressable } from "react-native";
 import LottieView from "lottie-react-native";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { router } from "expo-router";
@@ -188,8 +188,17 @@ const CustomCalendar: React.FC = () => {
     });
   };
 
+  const handleSettingPress = () => {
+    router.push("SettingScreen");
+  };
+
   return (
-    <View>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Pressable onPress={() => handleSettingPress()}>
+          <AntDesign name="setting" size={24} color="black" />
+        </Pressable>
+      </View>
       <View style={styles.calendar}>
         <Calendar
           theme={calendarTheme}
@@ -222,6 +231,15 @@ export default CustomCalendar;
 const { width } = Dimensions.get("window");
 
 const styles = StyleSheet.create({
+  container: {
+    backgroundColor: "#FAF7F0"
+  },
+  header: {
+    padding: 16,
+    justifyContent: "center",
+    alignItems: "flex-end",
+    marginRight: 10
+  },
   calendar: {
     padding: 10,
   },
