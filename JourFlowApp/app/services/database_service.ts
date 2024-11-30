@@ -156,7 +156,7 @@ const DatabaseService = {
     const formattedDate = date.toISOString().split('T')[0]; 
     try {
       const result = await this.db.getAllAsync<{ count: number }>(
-        `SELECT COUNT(*) as count FROM Posts WHERE PostDate = ?`,
+        `SELECT COUNT(*) as count FROM Posts WHERE DATE(PostDate) = ?`,
         [formattedDate]
       );
       const count = result[0]?.count;

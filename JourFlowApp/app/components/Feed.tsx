@@ -27,6 +27,7 @@ const Feed = () => {
   const loadPosts = async () => {
     try {
       const data = await DatabaseService.getPosts();
+      console.log(data);
       setPosts(data);
     } catch (error) {
       console.error("Error fetching posts:", error);

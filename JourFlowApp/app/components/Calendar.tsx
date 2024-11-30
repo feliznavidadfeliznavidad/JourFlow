@@ -138,9 +138,6 @@ const CustomCalendar: React.FC = () => {
         );
   
     const formattedDate = date.toISOString();
-  
-    console.log(`Send: ${formattedDate}`);
-    console.log(`Send type: ${typeof formattedDate}`);
     
     DatabaseService.existingDateOfPost(date)
       .then((exists) => {
