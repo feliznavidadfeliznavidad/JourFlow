@@ -1,33 +1,24 @@
-// Import các module cần thiết
+// Content.tsx
 import React, { useEffect, useState } from "react";
 import {
   KeyboardAvoidingView,
   StyleSheet,
-  Text,
-  TextInput,
   View,
   Platform,
-  TouchableWithoutFeedback,
-  Keyboard,
-  TouchableOpacity,
-  Image,
-  FlatList,
   ScrollView,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import FontLoader from "../services/FontsLoader";
-import LottieView from "lottie-react-native";
-import Feather from "@expo/vector-icons/Feather";
-import Entypo from "@expo/vector-icons/Entypo";
 import * as ImagePicker from "expo-image-picker";
 import icons, { IconPath } from "../../assets/icon/icon";
 import * as FileSystem from "expo-file-system";
 import DatabaseService from "../services/database_service";
-import { format, parse } from "date-fns";
-import date_format from "../services/dateFormat_service";
+import { Header } from '../components/HeaderDetail';
+import { ImageList } from '../components/ImageList';
+import { ContentInput } from '../components/ContentEditor';
+import { Footer } from '../components/FooterActions';
 
-// Định nghĩa interface
 interface Post {
   id: number;
   userId: number;
@@ -38,20 +29,13 @@ interface Post {
   UpdateDate: string;
 }
 
-interface Imgs {
-  id: number;
-  postId: number;
-  url: string;
-}
-
-// Component chính
 const Content = () => {
-  // Khởi tạo các state và biến
   const db = DatabaseService.db;
   const [postData, setPostData] = useState<Post[]>([]);
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
   const [images, setImages] = useState<{ uri: string }[]>([]);
+  const [existingPost, setExistingPost] = useState(false); // Thêm state để track trạng thái post
 
   const { icon, formattedDate } = useLocalSearchParams<{ icon: string; formattedDate: string }>();
 
@@ -59,13 +43,14 @@ const Content = () => {
   const iconKey = Array.isArray(icon) ? icon[0] : icon;
   const iconSource = iconKey && iconKey in icons ? icons[iconKey as IconPath] : icons["normal"];
 
-  // Hàm kiểm tra dữ liệu
   const checkExists = async () => {
     try {
       const date = new Date(formattedDate);
       const exists = await DatabaseService.existingDateOfPost(date);
   
       if (exists) {
+        setExistingPost(true); // Set trạng thái là đã tồn tại post
+        
         // Lấy thông tin bài viết
         const post = await DatabaseService.getPostByDate(date);
   
@@ -79,19 +64,16 @@ const Content = () => {
   
           if (images && images.length > 0) {
             const formattedImages = images.map((img) => ({ uri: img.url }));
-            setImages(formattedImages); // Cập nhật state với danh sách hình ảnh
-          } else {
-            console.log("No images found for this post");
+            setImages(formattedImages);
           }
         }
       } else {
-        console.log("No post found for this date");
+        setExistingPost(false); // Set trạng thái là chưa tồn tại post
       }
     } catch (error) {
       console.error("Error in checkExists:", error);
     }
   };
-  
 
   // Hàm chọn ảnh
   const pickImage = async () => {
@@ -111,7 +93,7 @@ const Content = () => {
       console.error("Error picking image:", error);
     }
   };
-
+  
   // Hàm lưu ảnh vào bộ nhớ
   const saveImgsToLocalStorage = async () => {
     if (images.length === 0) return [];
@@ -174,31 +156,10 @@ const Content = () => {
     }
   };
 
-  // Hàm lấy dữ liệu từ database
-  const fetchPostData = async () => {
-    try {
-      const user_infor = await db.getAllAsync("SELECT * FROM Posts");
-      console.log(user_infor);
-    } catch (error) {
-      console.error("error when fetching: ", error);
-    }
-  };
-
-  const fetchImgsData = async () => {
-    try {
-      const user_infor = await db.getAllAsync("SELECT * FROM IMGs");
-      console.log(user_infor);
-    } catch (error) {
-      console.error("error when fetching: ", error);
-    }
-  };
-
-  // Hook
   useEffect(() => {
     checkExists();
   }, []);
 
-  // Render UI
   return (
     <FontLoader>
       <SafeAreaView style={styles.container}>
@@ -213,58 +174,20 @@ const Content = () => {
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
-              {/* Header */}
-              <View style={styles.header}>
-                <LottieView source={iconSource} autoPlay loop style={styles.feelingState} />
-                <Text style={styles.date}>{date_format(receiveDate).fullDate}</Text>
-                <Text style={styles.day}>{date_format(receiveDate).weekday}</Text>
-              </View>
-
-              {/* Hiển thị ảnh đã chọn */}
-              {images.length > 0 && (
-                <View style={styles.imageListContainer}>
-                  <FlatList
-                    horizontal
-                    data={images}
-                    keyExtractor={(item, index) => item.uri + index.toString()}
-                    renderItem={({ item }) => (
-                      <Image source={{ uri: item.uri }} style={{ width: 200, height: 200 }} />
-                    )}
-                  />
-                </View>
-              )}
-
-              {/* Nội dung */}
-              <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <View style={styles.content}>
-                  <TextInput
-                    placeholder="Title "
-                    style={styles.titleInput}
-                    value={title}
-                    onChangeText={setTitle}
-                  />
-                  <TextInput
-                    editable
-                    multiline
-                    value={content}
-                    onChangeText={setContent}
-                    style={styles.contentInput}
-                    placeholder="Write about your day..."
-                    scrollEnabled={false}
-                  />
-                </View>
-              </TouchableWithoutFeedback>
+              <Header iconSource={iconSource} receiveDate={receiveDate} />
+              <ImageList images={images} />
+              <ContentInput
+                title={title}
+                content={content}
+                setTitle={setTitle}
+                setContent={setContent}
+                isReadOnly={existingPost} // Truyền prop để control chế độ read-only
+              />
             </ScrollView>
-
-            {/* Footer */}
-            <View style={styles.footer}>
-              <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
-                <Feather name="image" size={28} color="black" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.submitContent} onPress={handleSubmit}>
-                <Entypo name="check" size={28} color="black" />
-              </TouchableOpacity>
-            </View>
+            {/* Chỉ hiển thị Footer nếu chưa tồn tại post */}
+            {!existingPost && (
+              <Footer onImagePick={pickImage} onSubmit={handleSubmit} />
+            )}
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -272,9 +195,6 @@ const Content = () => {
   );
 };
 
-export default Content;
-
-// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -291,63 +211,6 @@ const styles = StyleSheet.create({
   scrollViewContent: {
     flexGrow: 1,
   },
-  header: {
-    padding: 20,
-    marginBottom: 20,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  feelingState: {
-    width: 48,
-    height: 48,
-  },
-  date: {
-    fontSize: 18,
-    fontStyle: "italic",
-    fontWeight: "bold",
-    color: "#1E1C1C",
-    marginBottom: 10,
-    fontFamily: "Kalam-Regular",
-  },
-  day: {
-    fontSize: 16,
-    fontStyle: "italic",
-    color: "#AAA598",
-    fontFamily: "Kalam-Regular",
-  },
-  imageListContainer: {
-    marginBottom: 20,
-    height: 140,
-  },
-  content: {
-    flex: 1,
-  },
-  titleInput: {
-    padding: 10,
-    textAlignVertical: "top",
-    fontFamily: "Kalam-Regular",
-  },
-  contentInput: {
-    minHeight: 200,
-    padding: 10,
-    textAlignVertical: "top",
-    fontFamily: "Kalam-Regular",
-  },
-  footer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderTopColor: "black",
-    borderTopWidth: 1,
-    marginLeft: -20,
-    marginRight: -20,
-  },
-  imageButton: {
-    padding: 10,
-    paddingLeft: 20,
-  },
-  submitContent: {
-    padding: 10,
-    paddingRight: 20,
-  },
 });
+
+export default Content;

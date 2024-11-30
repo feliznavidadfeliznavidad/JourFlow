@@ -1,31 +1,30 @@
-import React from "react";
-import { View, Image, FlatList, StyleSheet } from "react-native";
+import React from 'react';
+import { View, Image, FlatList, StyleSheet } from 'react-native';
 
-const ImageList = ({ images }: { images: { uri: string }[] }) => (
-  <View style={styles.imageListContainer}>
-    {images.length > 0 && (
+interface ImageListProps {
+  images: { uri: string }[];
+}
+
+export const ImageList: React.FC<ImageListProps> = ({ images }) => {
+  if (images.length === 0) return null;
+
+  return (
+    <View style={styles.imageListContainer}>
       <FlatList
         horizontal
         data={images}
         keyExtractor={(item, index) => item.uri + index.toString()}
         renderItem={({ item }) => (
-          <Image source={{ uri: item.uri }} style={styles.image} />
+          <Image source={{ uri: item.uri }} style={{ width: 200, height: 200 }} />
         )}
       />
-    )}
-  </View>
-);
-
-export default ImageList;
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   imageListContainer: {
     marginBottom: 20,
     height: 140,
   },
-  image: {
-    width: 140,
-    height: 140,
-    marginRight: 10,
-  },
-});
+})

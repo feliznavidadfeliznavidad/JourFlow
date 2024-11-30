@@ -1,4 +1,11 @@
-import { Dimensions, StyleSheet, Text, View, Image } from "react-native";
+import {
+  Dimensions,
+  StyleSheet,
+  Text,
+  View,
+  Image,
+  Pressable,
+} from "react-native";
 import React, { useEffect, useState } from "react";
 import LottieView from "lottie-react-native";
 import icons, { IconPath } from "../../assets/icon/icon";
@@ -7,6 +14,7 @@ import date_format from "../services/dateFormat_service";
 const { width, height } = Dimensions.get("window");
 import { parse } from "date-fns";
 import DatabaseService from "../services/database_service";
+import { router } from "expo-router";
 
 interface Post {
   id: number;
@@ -49,50 +57,60 @@ const Card: React.FC<Post> = (Post) => {
 
   return (
     <FontLoader>
-      <View style={styles.cardContainer}>
-        <View style={styles.contentWrapper}>
-          <View style={styles.cardLeft}>
-            <View style={styles.header}>
-              <View style={styles.iconArea}>
-                <LottieView
-                  source={icons[Post.IconPath]}
-                  autoPlay
-                  loop
-                  style={styles.icon}
-                />
+      <Pressable
+        onPress={() => {
+          const formattedDate = Post.PostDate;
+          router.push({
+            pathname: "DetailScreen",
+            params: { formattedDate },
+          });
+        }}
+      >
+        <View style={styles.cardContainer}>
+          <View style={styles.contentWrapper}>
+            <View style={styles.cardLeft}>
+              <View style={styles.header}>
+                <View style={styles.iconArea}>
+                  <LottieView
+                    source={icons[Post.IconPath]}
+                    autoPlay
+                    loop
+                    style={styles.icon}
+                  />
+                </View>
+                <View style={styles.dateArea}>
+                  <Text style={styles.dateText}>
+                    {date_format(dateString, "short").fullDate}
+                  </Text>
+                  <Text style={styles.weekdayText}>
+                    {date_format(dateString, "short").weekday}
+                  </Text>
+                </View>
               </View>
-              <View style={styles.dateArea}>
-                <Text style={styles.dateText}>
-                  {date_format(dateString, "short").fullDate}
-                </Text>
-                <Text style={styles.weekdayText}>
-                  {date_format(dateString, "short").weekday}
+              <View style={styles.contentArea}>
+                <Text
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                  style={styles.contentText}
+                >
+                  {Post.Title?.length > 0 ? Post.Title : Post.Content}
                 </Text>
               </View>
             </View>
-            <View style={styles.contentArea}>
-              <Text
-                numberOfLines={2}
-                ellipsizeMode="tail"
-                style={styles.contentText}
-              >
-                {Post.Title?.length > 0 ? Post.Title : Post.Content}
-              </Text>
+            <View style={styles.cardRight}>
+              {imgs.length > 0 && (
+                <View style={styles.imgContainer}>
+                  <Image
+                    source={{ uri: imgs[0].url }}
+                    style={styles.image}
+                    resizeMode="cover"
+                  />
+                </View>
+              )}
             </View>
-          </View>
-          <View style={styles.cardRight}>
-            {imgs.length > 0 && (
-              <View style={styles.imgContainer}>
-                <Image
-                  source={{ uri: imgs[0].url }}
-                  style={styles.image}
-                  resizeMode="cover"
-                />
-              </View>
-            )}
           </View>
         </View>
-      </View>
+      </Pressable>
     </FontLoader>
   );
 };
