@@ -17,7 +17,8 @@ interface Post {
   Title: string;
   IconPath: IconPath;
   Content: string;
-  DateTime: string;
+  PostDate: string;
+  UpdateDate: string;
 }
 
 const Feed = () => {
@@ -74,7 +75,8 @@ const Feed = () => {
                   Title={post.Title}
                   IconPath={post.IconPath}
                   Content={post.Content}
-                  DateTime={post.DateTime}
+                  PostDate={post.PostDate}
+                  UpdateDate={post.UpdateDate}
                 />
               </View>
             );

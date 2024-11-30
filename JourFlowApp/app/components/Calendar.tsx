@@ -97,6 +97,7 @@ const CustomCalendar: React.FC = () => {
   useEffect(() => {
     const initializeApp = async () => {
       await DatabaseService.init();
+      await DatabaseService.insertUser(); // Insert clone user data for testing
       await loadMarkedDates();
     };
 
@@ -109,7 +110,7 @@ const CustomCalendar: React.FC = () => {
       const newMarkedDates: MarkedDates = {};
 
       posts.forEach(post => {
-        const formattedDate = format(post.DateTime, "yyyy-MM-dd");
+        const formattedDate = format(post.PostDate, "yyyy-MM-dd");
         newMarkedDates[formattedDate] = {
           marked: true,
           dot: {

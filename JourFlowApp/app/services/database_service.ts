@@ -9,7 +9,8 @@ interface Post {
   Title: string;
   IconPath: IconPath;
   Content: string;
-  DateTime: string;
+  PostDate: string;
+  UpdateDate: string;
 }
 
 interface User {
@@ -109,7 +110,7 @@ const DatabaseService = {
       throw error;
     }
   },
-  
+
   async getUsers(): Promise<User[]> {
     try {
       return await this.db.getAllAsync<User>("SELECT * FROM User");
@@ -157,7 +158,7 @@ const DatabaseService = {
     const formattedDate = date.toISOString();
     try {
       const result = await this.db.getAllAsync<{ count: number }>(
-        `SELECT COUNT(*) as count FROM Posts WHERE DateTime = ?`,
+        `SELECT COUNT(*) as count FROM Posts WHERE PostDate = ?`,
         [formattedDate]
       );
       const count = result[0]?.count;

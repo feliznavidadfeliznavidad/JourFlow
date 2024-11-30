@@ -88,9 +88,9 @@ const Content = () => {
       // const formattedDate = format(receiveDate, "yyyy MM dd");
   
       const postResult = await db.runAsync(`
-        INSERT INTO Posts (userId, Title, IconPath, Content, DateTime) 
-        VALUES (?, ?, ?, ?, ?)
-      `, [1, sanitizedTitle, sanitizedIconPath, sanitizedContent, receiveDate.toISOString()]);
+        INSERT INTO Posts (userId, Title, IconPath, Content, PostDate, UpdateDate) 
+        VALUES (?, ?, ?, ?, ?, ?)
+      `, [1, sanitizedTitle, sanitizedIconPath, sanitizedContent, receiveDate.toISOString(), new Date().toISOString()]);
   
       const postId = postResult.lastInsertRowId;
   

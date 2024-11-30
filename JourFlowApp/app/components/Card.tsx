@@ -14,7 +14,8 @@ interface Post {
   Title: string;
   IconPath: IconPath;
   Content: string;
-  DateTime: string;
+  PostDate: string;
+  UpdateDate: string;
 }
 
 interface Imgs {
@@ -26,7 +27,7 @@ interface Imgs {
 const Card: React.FC<Post> = (Post) => {
   const [imgs, setImgs] = useState<Imgs[]>([]);
 
-  const dateString = new Date(Post.DateTime);
+  const dateString = new Date(Post.PostDate);
   // const formattedDateString = dateString.replace(/ /g, "-");
   // const receiveDate = parse(formattedDateString, "yyyy-MM-dd", new Date());
 
