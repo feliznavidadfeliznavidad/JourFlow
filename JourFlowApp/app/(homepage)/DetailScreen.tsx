@@ -41,13 +41,13 @@ const Content = () => {
   const [currentPostId, setCurrentPostId] = useState<number | null>(null);
   const [currentIcon, setCurrentIcon] = useState<string>("normal");
 
-  const { icon, formattedDate } = useLocalSearchParams<{ icon: string; formattedDate: string }>();
+  // const { icon, formattedDate } = useLocalSearchParams<{ icon: string; formattedDate: string }>();
+
+  const params = useLocalSearchParams<{ icon?: string; formattedDate: string }>();
+  const formattedDate = params.formattedDate;
+  const iconFromParams = params.icon;
 
   const receiveDate = new Date(formattedDate);
-
-  const iconSource = icon ? 
-    (icon in icons ? icons[icon as IconPath] : icons["normal"]) :
-    (currentIcon in icons ? icons[currentIcon as IconPath] : icons["normal"]);
 
   const checkExists = async () => {
     try {
@@ -63,8 +63,10 @@ const Content = () => {
           setTitle(post[0].Title);
           setContent(post[0].Content);
           setCurrentPostId(post[0].id);
-          if (!icon) {
+          if (!iconFromParams) {
             setCurrentIcon(post[0].IconPath);
+          } else {
+            setCurrentIcon(iconFromParams);
           }
   
           const images = await DatabaseService.getImagesByPostId(post[0].id);
@@ -76,14 +78,14 @@ const Content = () => {
       } else {
         setExistingPost(false);
         setIsEditing(false);
-        if (!icon) {
-          setCurrentIcon("normal");
-        }
+        setCurrentIcon(iconFromParams || "normal");
       }
     } catch (error) {
       console.error("Error in checkExists:", error);
     }
   };
+
+  const iconSource = icons[currentIcon as IconPath] || icons["normal"];
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -94,39 +96,12 @@ const Content = () => {
       Alert.alert("Error", "Please enter a title or content");
       return;
     }
-
+  
     try {
       const savedImgPaths = await saveImgsToLocalStorage();
       
-      // Update post in database
       if (currentPostId) {
-        await db.runAsync(
-          `
-          UPDATE Posts 
-          SET Title = ?, Content = ?, UpdateDate = ?
-          WHERE id = ?
-          `,
-          [title, content, new Date().toISOString(), currentPostId]
-        );
-
-        // Delete existing images
-        await db.runAsync(
-          `DELETE FROM IMGs WHERE postId = ?`,
-          [currentPostId]
-        );
-
-        // Insert new images
-        if (savedImgPaths.length > 0) {
-          await Promise.all(
-            savedImgPaths.map(async (imgPath) => {
-              await db.runAsync(
-                `INSERT INTO IMGs (postId, url) VALUES (?, ?)`,
-                [currentPostId, imgPath]
-              );
-            })
-          );
-        }
-
+        await DatabaseService.updatePost(currentPostId, title, content, savedImgPaths);
         setIsEditing(false);
         Alert.alert("Success", "Post updated successfully");
         await checkExists(); // Refresh data
@@ -136,22 +111,11 @@ const Content = () => {
       Alert.alert("Error", "Failed to update post. Please try again.");
     }
   };
-
+  
   const handleDelete = async () => {
     try {
       if (currentPostId) {
-        // Delete images first (due to foreign key constraint)
-        await db.runAsync(
-          `DELETE FROM IMGs WHERE postId = ?`,
-          [currentPostId]
-        );
-
-        // Delete post
-        await db.runAsync(
-          `DELETE FROM Posts WHERE id = ?`,
-          [currentPostId]
-        );
-
+        await DatabaseService.deletePost(currentPostId);
         Alert.alert("Success", "Post deleted successfully");
         router.replace("(homepage)/HomeScreen");
       }
@@ -160,7 +124,6 @@ const Content = () => {
       Alert.alert("Error", "Failed to delete post. Please try again.");
     }
   };
-
 
   // Hàm chọn ảnh
   const pickImage = async () => {
@@ -204,42 +167,28 @@ const Content = () => {
   // Hàm xử lý khi submit
   const handleSubmit = async () => {
     if (!title.trim() && !content.trim()) {
-      alert("Please enter a title or content");
+      Alert.alert("Please enter a title or content");
       return;
     }
-
+  
     try {
       const savedImgPaths = await saveImgsToLocalStorage();
-
-      const sanitizedTitle = title.replace(/'/g, "''");
-      const sanitizedContent = content.replace(/'/g, "''");
-      const sanitizedIconPath = currentIcon.replace(/'/g, "''");
-
-      const postResult = await db.runAsync(
-        `
-        INSERT INTO Posts (userId, Title, IconPath, Content, PostDate, UpdateDate) 
-        VALUES (?, ?, ?, ?, ?, ?)
-      `,
-        [1, sanitizedTitle, sanitizedIconPath, sanitizedContent, receiveDate.toISOString(), new Date().toISOString()]
+      
+      await DatabaseService.createPost(
+        title,
+        content,
+        currentIcon,
+        receiveDate,
+        savedImgPaths
       );
-
-      const postId = postResult.lastInsertRowId;
-
-      if (savedImgPaths.length > 0) {
-        await Promise.all(
-          savedImgPaths.map(async (imgPath) => {
-            await db.runAsync(`INSERT INTO IMGs (postId, url) VALUES (?, ?)`, [postId, imgPath]);
-          })
-        );
-      }
-
+  
       setImages([]);
       setTitle("");
       setContent("");
       router.replace("(homepage)/HomeScreen");
     } catch (error) {
       console.error("Error in handleSubmit: ", error);
-      alert("Failed to create post. Please try again.");
+      Alert.alert("Failed to create post. Please try again.");
     }
   };
 

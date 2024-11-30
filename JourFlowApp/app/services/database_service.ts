@@ -67,6 +67,7 @@ const DatabaseService = {
     } catch (error) {
       console.error("Database initialization error:", error);
     }
+
   },
 
   async insertUser() {
@@ -148,6 +149,51 @@ const DatabaseService = {
     }
   },
 
+  async createPost(
+    title: string,
+    content: string,
+    iconPath: string,
+    postDate: Date,
+    savedImgPaths: string[]
+  ): Promise<number> {
+    try {
+      const sanitizedTitle = title.replace(/'/g, "''");
+      const sanitizedContent = content.replace(/'/g, "''");
+      const sanitizedIconPath = iconPath.replace(/'/g, "''");
+
+      const postResult = await this.db.runAsync(
+        `INSERT INTO Posts (userId, Title, IconPath, Content, PostDate, UpdateDate)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          1, // userId mặc định
+          sanitizedTitle,
+          sanitizedIconPath,
+          sanitizedContent,
+          postDate.toISOString(),
+          new Date().toISOString()
+        ]
+      );
+
+      const postId = postResult.lastInsertRowId;
+
+      if (savedImgPaths.length > 0) {
+        await Promise.all(
+          savedImgPaths.map(async (imgPath) => {
+            await this.db.runAsync(
+              `INSERT INTO IMGs (postId, url) VALUES (?, ?)`,
+              [postId, imgPath]
+            );
+          })
+        );
+      }
+
+      return postId;
+    } catch (error) {
+      console.error("Error in createPost:", error);
+      throw error;
+    }
+  },
+
   async clearDatabase() {
     try {
       await this.db.execAsync(`
@@ -173,6 +219,59 @@ const DatabaseService = {
       return count > 0;
     } catch (error) {
       console.error("Error checking date existence:", error);
+      throw error;
+    }
+  },
+
+  async updatePost(postId: number, title: string, content: string, savedImgPaths: string[]): Promise<void> {
+    try {
+      // Update post
+      await this.db.runAsync(
+        `UPDATE Posts 
+         SET Title = ?, Content = ?, UpdateDate = ?
+         WHERE id = ?`,
+        [title, content, new Date().toISOString(), postId]
+      );
+
+      // Delete existing images
+      await this.db.runAsync(
+        `DELETE FROM IMGs WHERE postId = ?`,
+        [postId]
+      );
+
+      // Insert new images
+      if (savedImgPaths.length > 0) {
+        await Promise.all(
+          savedImgPaths.map(async (imgPath) => {
+            await this.db.runAsync(
+              `INSERT INTO IMGs (postId, url) VALUES (?, ?)`,
+              [postId, imgPath]
+            );
+          })
+        );
+      }
+    } catch (error) {
+      console.error("Error in updatePost:", error);
+      throw error;
+    }
+  },
+
+  async deletePost(postId: number): Promise<void> {
+    try {
+      // Delete images first (foreign key constraint will handle this automatically,
+      // but we're keeping it explicit for clarity)
+      await this.db.runAsync(
+        `DELETE FROM IMGs WHERE postId = ?`,
+        [postId]
+      );
+
+      // Delete post
+      await this.db.runAsync(
+        `DELETE FROM Posts WHERE id = ?`,
+        [postId]
+      );
+    } catch (error) {
+      console.error("Error in deletePost:", error);
       throw error;
     }
   }

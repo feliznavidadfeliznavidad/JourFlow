@@ -147,7 +147,6 @@ const CustomCalendar: React.FC = () => {
             pathname: "DetailScreen",
             params: { formattedDate },
           });
-          console.log(`There is already a post on ${date}.`);
           return;
         }
   
