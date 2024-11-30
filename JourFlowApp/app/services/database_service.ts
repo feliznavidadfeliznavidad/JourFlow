@@ -109,6 +109,16 @@ const DatabaseService = {
     }
   },
 
+  async getPostByDate(date: Date): Promise<Post[]> {
+    const formattedDate = date.toISOString().split('T')[0]; 
+    try {
+      return await this.db.getAllAsync<Post>(`SELECT * FROM Posts WHERE DATE(PostDate) = ?`, [formattedDate]);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+      throw error;
+    }
+  },
+
   async getUsers(): Promise<User[]> {
     try {
       return await this.db.getAllAsync<User>("SELECT * FROM User");

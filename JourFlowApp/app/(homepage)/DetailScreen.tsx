@@ -1,3 +1,5 @@
+// Import các module cần thiết
+import React, { useEffect, useState } from "react";
 import {
   KeyboardAvoidingView,
   StyleSheet,
@@ -12,7 +14,6 @@ import {
   FlatList,
   ScrollView,
 } from "react-native";
-import React, { useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import FontLoader from "../services/FontsLoader";
@@ -26,98 +27,154 @@ import DatabaseService from "../services/database_service";
 import { format, parse } from "date-fns";
 import date_format from "../services/dateFormat_service";
 
+// Định nghĩa interface
+interface Post {
+  id: number;
+  userId: number;
+  Title: string;
+  IconPath: IconPath;
+  Content: string;
+  PostDate: string;
+  UpdateDate: string;
+}
+
+interface Imgs {
+  id: number;
+  postId: number;
+  url: string;
+}
+
+// Component chính
 const Content = () => {
+  // Khởi tạo các state và biến
   const db = DatabaseService.db;
-
-  const { icon, formattedDate } = useLocalSearchParams<{ icon: string; formattedDate: string }>();
-  
-  // const receiveDate = parse(date, "yyyy-MM-dd", new Date());
-
-  const receiveDate = new Date(formattedDate);
-
-  console.log("Received date on detail 1 : " + formattedDate)
-  console.log("Received date on detail 2: " + receiveDate)
-  console.log("Received date type on detail : " + typeof receiveDate)
-
-  const iconKey = Array.isArray(icon) ? icon[0] : icon;
-  
-  const iconSource =
-    iconKey && iconKey in icons ? icons[iconKey as IconPath] : icons["normal"];
-
+  const [postData, setPostData] = useState<Post[]>([]);
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
-
-
   const [images, setImages] = useState<{ uri: string }[]>([]);
 
+  const { icon, formattedDate } = useLocalSearchParams<{ icon: string; formattedDate: string }>();
+
+  const receiveDate = new Date(formattedDate);
+  const iconKey = Array.isArray(icon) ? icon[0] : icon;
+  const iconSource = iconKey && iconKey in icons ? icons[iconKey as IconPath] : icons["normal"];
+
+  // Hàm kiểm tra dữ liệu
+  const checkExists = async () => {
+    try {
+      const date = new Date(formattedDate);
+      const exists = await DatabaseService.existingDateOfPost(date);
+  
+      if (exists) {
+        // Lấy thông tin bài viết
+        const post = await DatabaseService.getPostByDate(date);
+  
+        if (post && post.length > 0) {
+          setPostData(post);
+          setTitle(post[0].Title);
+          setContent(post[0].Content);
+  
+          // Lấy danh sách hình ảnh liên quan đến bài viết
+          const images = await DatabaseService.getImagesByPostId(post[0].id);
+  
+          if (images && images.length > 0) {
+            const formattedImages = images.map((img) => ({ uri: img.url }));
+            setImages(formattedImages); // Cập nhật state với danh sách hình ảnh
+          } else {
+            console.log("No images found for this post");
+          }
+        }
+      } else {
+        console.log("No post found for this date");
+      }
+    } catch (error) {
+      console.error("Error in checkExists:", error);
+    }
+  };
+  
+
+  // Hàm chọn ảnh
   const pickImage = async () => {
     try {
-      const result = await ImagePicker.launchImageLibraryAsync({  
-        mediaTypes: ['images'],
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
         allowsMultipleSelection: true,
         aspect: [1, 1],
         quality: 1,
       });
 
       if (!result.canceled) {
-        const selectedImages = result.assets.map((asset) => ({
-          uri: asset.uri,
-        }));
+        const selectedImages = result.assets.map((asset) => ({ uri: asset.uri }));
         setImages(selectedImages);
       }
     } catch (error) {
       console.error("Error picking image:", error);
     }
-  }
+  };
 
-  const handleSubmit = async() => {
+  // Hàm lưu ảnh vào bộ nhớ
+  const saveImgsToLocalStorage = async () => {
+    if (images.length === 0) return [];
+
+    const folderUri = `${FileSystem.documentDirectory}/UserSavedImages`;
+    await FileSystem.makeDirectoryAsync(folderUri, { intermediates: true });
+
+    const imgLinks: string[] = [];
+    await Promise.all(
+      images.map(async (image, index) => {
+        const filename = `image_${Date.now()}_${index}.jpg`;
+        const newUri = `${folderUri}/${filename}`;
+        await FileSystem.copyAsync({ from: image.uri, to: newUri });
+        imgLinks.push(newUri);
+      })
+    );
+
+    return imgLinks;
+  };
+
+  // Hàm xử lý khi submit
+  const handleSubmit = async () => {
     if (!title.trim() && !content.trim()) {
       alert("Please enter a title or content");
       return;
     }
-  
+
     try {
       const savedImgPaths = await saveImgsToLocalStorage();
-  
-      const iconPath = Array.isArray(icon) ? icon[0] : icon;
-  
+
       const sanitizedTitle = title.replace(/'/g, "''");
       const sanitizedContent = content.replace(/'/g, "''");
-      const sanitizedIconPath = iconPath.replace(/'/g, "''");
-  
-      // const formattedDate = format(receiveDate, "yyyy MM dd");
-  
-      const postResult = await db.runAsync(`
+      const sanitizedIconPath = iconKey.replace(/'/g, "''");
+
+      const postResult = await db.runAsync(
+        `
         INSERT INTO Posts (userId, Title, IconPath, Content, PostDate, UpdateDate) 
         VALUES (?, ?, ?, ?, ?, ?)
-      `, [1, sanitizedTitle, sanitizedIconPath, sanitizedContent, receiveDate.toISOString(), new Date().toISOString()]);
-  
-      const postId = postResult.lastInsertRowId;
-  
-      if (savedImgPaths.length > 0) {
-        await Promise.all(savedImgPaths.map(async (imgPath) => {
-          await db.runAsync(`
-            INSERT INTO IMGs (postId, url) 
-            VALUES (?, ?)
-          `, [postId, imgPath]);
-        }));
-      }
-  
-      setImages([]);
-      setTitle('');
-      setContent('');
-  
-      await fetchPostData();
-      await fetchImgsData();
+      `,
+        [1, sanitizedTitle, sanitizedIconPath, sanitizedContent, receiveDate.toISOString(), new Date().toISOString()]
+      );
 
+      const postId = postResult.lastInsertRowId;
+
+      if (savedImgPaths.length > 0) {
+        await Promise.all(
+          savedImgPaths.map(async (imgPath) => {
+            await db.runAsync(`INSERT INTO IMGs (postId, url) VALUES (?, ?)`, [postId, imgPath]);
+          })
+        );
+      }
+
+      setImages([]);
+      setTitle("");
+      setContent("");
       router.replace("(homepage)/HomeScreen");
-  
     } catch (error) {
       console.error("Error in handleSubmit: ", error);
       alert("Failed to create post. Please try again.");
     }
   };
-  
+
+  // Hàm lấy dữ liệu từ database
   const fetchPostData = async () => {
     try {
       const user_infor = await db.getAllAsync("SELECT * FROM Posts");
@@ -126,7 +183,7 @@ const Content = () => {
       console.error("error when fetching: ", error);
     }
   };
-  
+
   const fetchImgsData = async () => {
     try {
       const user_infor = await db.getAllAsync("SELECT * FROM IMGs");
@@ -135,35 +192,13 @@ const Content = () => {
       console.error("error when fetching: ", error);
     }
   };
-  
-  const saveImgsToLocalStorage = async () => {
 
-    if (images.length === 0) return [];
-  
-    const folderUri = `${FileSystem.documentDirectory}/UserSavedImages`;
-    
-    await FileSystem.makeDirectoryAsync(folderUri, { intermediates: true });
-  
-    const imgLinks: string[] = [];
-  
-    await Promise.all(images.map(async (image, index) => {
-      const filename = `image_${Date.now()}_${index}.jpg`;
-      const newUri = `${folderUri}/${filename}`;
-  
-      console.log("Saved image to file " + filename);
-      console.log("Saved image to path " + newUri);
-  
-      await FileSystem.copyAsync({
-        from: image.uri,
-        to: newUri,
-      });
-  
-      imgLinks.push(newUri);
-    }));
-  
-    return imgLinks;
-  };
+  // Hook
+  useEffect(() => {
+    checkExists();
+  }, []);
 
+  // Render UI
   return (
     <FontLoader>
       <SafeAreaView style={styles.container}>
@@ -178,18 +213,14 @@ const Content = () => {
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
+              {/* Header */}
               <View style={styles.header}>
-                <LottieView
-                  source={iconSource}
-                  autoPlay
-                  loop
-                  style={styles.feelingState}
-                />
-
+                <LottieView source={iconSource} autoPlay loop style={styles.feelingState} />
                 <Text style={styles.date}>{date_format(receiveDate).fullDate}</Text>
                 <Text style={styles.day}>{date_format(receiveDate).weekday}</Text>
               </View>
 
+              {/* Hiển thị ảnh đã chọn */}
               {images.length > 0 && (
                 <View style={styles.imageListContainer}>
                   <FlatList
@@ -197,24 +228,13 @@ const Content = () => {
                     data={images}
                     keyExtractor={(item, index) => item.uri + index.toString()}
                     renderItem={({ item }) => (
-                      <View
-                        style={{
-                          display: "flex",
-                          justifyContent: "flex-start",
-                          alignItems: "flex-start",
-                          flexDirection: "row",
-                        }}
-                      >
-                        <Image
-                          source={{ uri: item.uri }}
-                          style={{ width: 200, height: 200 }}
-                        />
-                      </View>
+                      <Image source={{ uri: item.uri }} style={{ width: 200, height: 200 }} />
                     )}
                   />
                 </View>
               )}
 
+              {/* Nội dung */}
               <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <View style={styles.content}>
                   <TextInput
@@ -236,21 +256,12 @@ const Content = () => {
               </TouchableWithoutFeedback>
             </ScrollView>
 
+            {/* Footer */}
             <View style={styles.footer}>
-              <TouchableOpacity
-                style={styles.imageButton}
-                onPress={() => {
-                  pickImage();
-                }}
-              >
+              <TouchableOpacity style={styles.imageButton} onPress={pickImage}>
                 <Feather name="image" size={28} color="black" />
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.submitContent}
-                onPress={() => {
-                  handleSubmit();
-                }}
-              >
+              <TouchableOpacity style={styles.submitContent} onPress={handleSubmit}>
                 <Entypo name="check" size={28} color="black" />
               </TouchableOpacity>
             </View>
@@ -263,6 +274,7 @@ const Content = () => {
 
 export default Content;
 
+// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -307,12 +319,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     height: 140,
   },
-  imageList: {
-    flex: 1,
-  },
-  imageListContent: {
-    alignItems: "center",
-  },
   content: {
     flex: 1,
   },
@@ -343,10 +349,5 @@ const styles = StyleSheet.create({
   submitContent: {
     padding: 10,
     paddingRight: 20,
-  },
-  image: {
-    width: 140,
-    height: 140,
-    marginRight: 10,
   },
 });

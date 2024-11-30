@@ -143,6 +143,10 @@ const CustomCalendar: React.FC = () => {
     DatabaseService.existingDateOfPost(date)
       .then((exists) => {
         if (exists) {
+          router.push({
+            pathname: "DetailScreen",
+            params: { formattedDate },
+          });
           console.log(`There is already a post on ${date}.`);
           return;
         }
