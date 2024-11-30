@@ -163,10 +163,10 @@ const Content = () => {
         aspect: [1, 1],
         quality: 1,
       });
-
+  
       if (!result.canceled) {
         const selectedImages = result.assets.map((asset) => ({ uri: asset.uri }));
-        setImages(selectedImages);
+        setImages(prevImages => [...prevImages, ...selectedImages]);
       }
     } catch (error) {
       console.error("Error picking image:", error);
