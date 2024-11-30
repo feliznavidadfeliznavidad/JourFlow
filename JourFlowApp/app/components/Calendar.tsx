@@ -102,6 +102,7 @@ const CustomCalendar: React.FC = () => {
     };
 
     initializeApp();
+    todayCheck();
   }, []);
 
   const loadMarkedDates = async () => {
@@ -168,6 +169,22 @@ const CustomCalendar: React.FC = () => {
     dayTextColor: colors.textInLight,
   };
 
+  const [isSelect, setSelect] = useState<boolean>(true);
+
+  const todayCheck = () => {
+    DatabaseService.existingDateOfPost(today)
+    .then((exists) => {
+      if (exists) {
+        setSelect(false)
+      } else {
+        setSelect(true)
+      }
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+    });
+  };
+
   return (
     <View>
       <View style={styles.calendar}>
@@ -184,8 +201,9 @@ const CustomCalendar: React.FC = () => {
 
       <View style={styles.submitContainer}>
         <TouchableOpacity
-          style={styles.submitButton}
+          style={[styles.submitButton, { opacity: isSelect == false ? 0.2 : 1 }]}
           onPress={() => handleDayPress(today)}
+          disabled={isSelect == false}
         >
           <Text style={styles.submitTitle}>
             <AntDesign name="plus" size={24} color="black" />
