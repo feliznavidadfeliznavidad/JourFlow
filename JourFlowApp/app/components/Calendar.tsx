@@ -41,9 +41,13 @@ interface MarkedDateInfo {
   dot?: DotType | DotType[];
 }
 
+interface CustomCalendarProps {
+  reloadKey: number;
+}
+
 type MarkedDates = Record<string, MarkedDateInfo>;
 
-const CustomCalendar: React.FC = () => {
+const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
   const [markedDates, setMarkedDates] = useState<MarkedDates>({});
   const today = useMemo(() => new Date(), []);
   const [isToday, setIsToday] = useState<boolean>(true);
@@ -58,8 +62,6 @@ const CustomCalendar: React.FC = () => {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-
-        await DatabaseService.init();
         await DatabaseService.insertFakeUser(); // Insert clone user data for testing
         await loadMarkedDates();
         await checkTodayEntry();
@@ -69,7 +71,7 @@ const CustomCalendar: React.FC = () => {
     };
 
     initializeApp();
-  }, []);
+  }, [reloadKey]);
 
   // Custom day component with improved rendering and interaction
   const DayComponent: React.FC<DayComponentProps> = React.memo(({ date, marking }) => {

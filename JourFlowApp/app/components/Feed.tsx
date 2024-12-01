@@ -39,10 +39,13 @@ const Feed = () => {
     alert("Comming Soon!");
   };
 
+  const handlePostDelete = () => {
+    loadPosts();
+  };
+
   useEffect(() => {
     loadPosts();
   }, []);
-
   return (
     <SafeAreaView>
       <View style={styles.feedContainer}>
@@ -64,6 +67,7 @@ const Feed = () => {
                   content={post.content}
                   post_date={post.post_date}
                   update_date={post.update_date}
+                  onDelete={handlePostDelete} 
                 />
               </View>
             );
@@ -78,9 +82,7 @@ export default Feed;
 
 const styles = StyleSheet.create({
   Container: {
-    width: "100%",
-    display: "flex",
-    alignItems: "center",
+    width: "100%"
   },
   header: {
     padding: 16,

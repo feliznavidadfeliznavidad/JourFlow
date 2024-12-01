@@ -3,7 +3,7 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
 import FontLoader from "../services/FontsLoader";
 import CustomCalendar from "../components/Calendar";
-import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
+import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import Feed from "../components/Feed";
 
 const Tab = createMaterialTopTabNavigator();
@@ -20,7 +20,9 @@ export default function Page() {
             tabBarStyle: { height: 0 },
           }}
         >
-          <Tab.Screen name="Left" component={CustomCalendar} />
+          <Tab.Screen name="Left">
+            {() => <CustomCalendar reloadKey={Math.random()} />}
+          </Tab.Screen>
           <Tab.Screen name="Right" component={Feed} />
         </Tab.Navigator>
       </SafeAreaView>

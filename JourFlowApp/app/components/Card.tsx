@@ -5,16 +5,21 @@ import {
   View,
   Image,
   Pressable,
+  Animated,
+  TouchableOpacity,
+  Alert,
 } from "react-native";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import LottieView from "lottie-react-native";
+import { Swipeable } from "react-native-gesture-handler";
 import icons, { IconPath } from "../../assets/icon/icon";
 import FontLoader from "../services/FontsLoader";
 import date_format from "../services/dateFormat_service";
-const { width, height } = Dimensions.get("window");
 import DatabaseService from "../services/database_service";
-import { router, useFocusEffect } from "expo-router";
+import { router } from "expo-router";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
+const { width, height } = Dimensions.get("window");
 
 interface Post {
   id: number;
@@ -23,7 +28,8 @@ interface Post {
   icon_path: IconPath;
   content: string;
   post_date: string;
-  update_date: string;
+  update_date: string;  
+  onDelete?: () => void;
 }
 
 interface Imgs {
@@ -32,17 +38,18 @@ interface Imgs {
   url: string;
 }
 
-const Card: React.FC<Post> = (Post) => {
+const Card: React.FC<Post> = (post) => {
   const [imgs, setImgs] = useState<Imgs[]>([]);
-
-  const dateString = new Date(Post.post_date);
-
-  console.log("TEST TEST: " + dateString)
+  const [isSwipeActive, setIsSwipeActive] = useState(false);
+  const swipeableRef = useRef<Swipeable>(null);
+  const timeoutRef = useRef<number>();
+  const swipeStartTimeRef = useRef<number>(0);
+  const dateString = new Date(post.post_date);
 
   const loadImgs = async () => {
     try {
-      const data = await DatabaseService.getPostImages(Post.id);
-      // const data = await DatabaseService.getImagesByPostId(Post.id);
+      const data = await DatabaseService.getPostImages(post.id);
+
       if (data.length > 0) {
         setImgs(data);
       }
@@ -51,30 +58,94 @@ const Card: React.FC<Post> = (Post) => {
     }
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      loadImgs();
-    }, [])
-  );
+  useEffect(() => {
+    loadImgs();
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [post.id]);
+
+  const handleDelete = async () => {
+    console.log("Deleting post:", post.id);
+    try {
+      if (post.id) {
+        await DatabaseService.deletePost(post.id);
+        if (post.onDelete) {
+          post.onDelete();
+        }
+      }
+    } catch (error) {
+      console.error("Error in handleDelete: ", error);
+      Alert.alert("Error", "Failed to delete post. Please try again.");
+    }
+  };
+
+  const handleSwipeStart = () => {
+    swipeStartTimeRef.current = Date.now();
+    setIsSwipeActive(true);
+  };
+
+  const handleSwipeEnd = () => {
+    const swipeDuration = Date.now() - swipeStartTimeRef.current;
+    
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    // Điều chỉnh thời gian chờ dựa trên thời lượng swipe
+    const delayTime = swipeDuration < 200 ? 500 : 100;
+    
+    timeoutRef.current = setTimeout(() => {
+      setIsSwipeActive(false);
+    }, delayTime) as unknown as number;
+  };
+
+  const handlePress = () => {
+    // Kiểm tra thêm thời gian từ khi bắt đầu swipe
+    const timeSinceSwipeStart = Date.now() - swipeStartTimeRef.current;
+    
+    if (!isSwipeActive && timeSinceSwipeStart > 200) {
+      router.push({
+        pathname: "DetailScreen",
+        params: { formattedDate: post.post_date },
+      });
+    }
+  };
+
+  const renderRightActions = () => {
+    return (
+      <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
+        <MaterialIcons name="delete" size={28} color="white" />
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <FontLoader>
-      <Pressable
-        onPress={() => {
-          const formattedDate = Post.post_date;
-          router.push({
-            pathname: "DetailScreen",
-            params: { formattedDate },
-          });
-        }}
+      <Swipeable
+        ref={swipeableRef}
+        renderRightActions={renderRightActions}
+        onSwipeableWillOpen={handleSwipeStart}
+        onSwipeableClose={handleSwipeEnd}
+        overshootRight={false}
+        rightThreshold={40}
       >
-        <View style={styles.cardContainer}>
+        <Pressable
+          onPress={handlePress}
+          disabled={isSwipeActive}
+          style={({ pressed }) => [
+            styles.cardContainer,
+            pressed && !isSwipeActive && styles.cardPressed,
+          ]}
+        >
           <View style={styles.contentWrapper}>
             <View style={styles.cardLeft}>
               <View style={styles.header}>
                 <View style={styles.iconArea}>
                   <LottieView
-                    source={icons[Post.icon_path]}
+                    source={icons[post.icon_path]}
                     autoPlay
                     loop
                     style={styles.icon}
@@ -95,7 +166,7 @@ const Card: React.FC<Post> = (Post) => {
                   ellipsizeMode="tail"
                   style={styles.contentText}
                 >
-                  {Post.title?.length > 0 ? Post.title : Post.content}
+                  {post.title?.length > 0 ? post.title : post.content}
                 </Text>
               </View>
             </View>
@@ -111,12 +182,13 @@ const Card: React.FC<Post> = (Post) => {
               )}
             </View>
           </View>
-        </View>
-      </Pressable>
+        </Pressable>
+      </Swipeable>
     </FontLoader>
   );
 };
 
+// Styles remain the same
 const styles = StyleSheet.create({
   cardContainer: {
     width: "90%",
@@ -137,6 +209,10 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
     alignSelf: "center",
+  },
+  cardPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.98 }],
   },
   contentWrapper: {
     flex: 1,
@@ -201,6 +277,19 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     backgroundColor: "#f5f5f5",
+  },
+
+  deleteButton: {
+    marginStart: "-8%",
+    width: "20%",
+    height: "83%",
+    backgroundColor: "#FF3B30",
+    justifyContent: "center",
+    alignItems: "center",
+    marginVertical: 12,
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+    marginEnd: 20
   },
 });
 
