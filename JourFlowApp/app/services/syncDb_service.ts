@@ -2,7 +2,6 @@ import { IconPath } from "../../assets/icon/icon";
 
 const SERVER_API = 'http://localhost:5004/api/posts'
 
-
 interface Post {
     id: number;
     userId: number;
@@ -38,14 +37,14 @@ const SyncDbService = {
             throw error;
         }
     },
-    addPost: async (post : Post) => {
+    addPost: async (posts : Post[]) => {
         try {
             const response = await fetch(SERVER_API, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(post)
+                body: JSON.stringify(posts)
             }).then(res => res.json()).then((json) => console.log(json));
             return response;
         }
@@ -87,3 +86,5 @@ const SyncDbService = {
         }
     }
 };
+
+export default SyncDbService

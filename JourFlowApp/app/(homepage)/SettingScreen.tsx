@@ -8,6 +8,7 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { Image } from "react-native";
 import { router } from "expo-router";
 import DatabaseService from "../services/database_service";
+import SyncDbService from "../services/syncDb_service";
 
 const SettingScreen = () => {
   const handlePress = () => {
@@ -27,7 +28,17 @@ const SettingScreen = () => {
       console.error("Error deleting all posts:", error);
     }
   };
-
+  const handleBackup = async () => {
+    try {
+      const posts = await DatabaseService.getPosts();
+      const images = await DatabaseService.getImages();
+      SyncDbService.addPost(posts);
+      alert("Backup completed successfully!");
+    } catch (error: any) {
+      alert(error.message);
+      console.error("Error backing up database:", error);
+    }
+  }
   return (
     <FontLoader>
       <SafeAreaView style={styles.safeArea}>
@@ -87,7 +98,7 @@ const SettingScreen = () => {
 
               <Pressable
                 style={styles.settingItem}
-                onPress={() => handlePress()}
+                onPress={() => handleBackup()}
               >
                 <Feather name="cloud" size={24} color="black" />
                 <Text style={styles.settingText}>Backup / Restore</Text>

@@ -38,28 +38,28 @@ const DatabaseService = {
         PRAGMA foreign_keys = ON;   
         
         CREATE TABLE IF NOT EXISTS User (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          userName TEXT NULL,
+          Id INTEGER PRIMARY KEY AUTOINCREMENT,
+          UserName TEXT NULL,
           JWT TEXT NOT NULL,
-          ggAccessToken TEXT NOT NULL,
-          refreshJWTToken TEXT NOT NULL
+          GgAccessToken TEXT NOT NULL,
+          RefreshJWTToken TEXT NOT NULL
         );
         
         CREATE TABLE IF NOT EXISTS Posts (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          userId INTEGER,
+          Id INTEGER PRIMARY KEY AUTOINCREMENT,
+          UserId INTEGER,
           Title TEXT NOT NULL,
           IconPath TEXT NOT NULL,
           Content TEXT NOT NULL,
-          PostDate TEXT NULL,
-          UpdateDate TEXT NULL,
+          PostDate TEXT NOT NULL,
+          UpdateDate TEXT NOT NULL,
           FOREIGN KEY(userId) REFERENCES User(id) ON DELETE CASCADE
         );
 
         CREATE TABLE IF NOT EXISTS IMGs (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          postId INTEGER,
-          url TEXT NULL,
+          Id INTEGER PRIMARY KEY AUTOINCREMENT,
+          PostId INTEGER,
+          Url TEXT NULL,
           FOREIGN KEY(postId) REFERENCES Posts(id) ON DELETE CASCADE
         );
       `);
