@@ -51,8 +51,8 @@ const DatabaseService = {
           Title TEXT NOT NULL,
           IconPath TEXT NOT NULL,
           Content TEXT NOT NULL,
-          PostDate TEXT NOT NULL,
-          UpdateDate TEXT NOT NULL,
+          PostDate TEXT NULL,
+          UpdateDate TEXT NULL,
           FOREIGN KEY(userId) REFERENCES User(id) ON DELETE CASCADE
         );
 
@@ -90,10 +90,10 @@ const DatabaseService = {
       await this.db.execAsync(`
         INSERT INTO Posts (userId, Title, IconPath, Content, PostDate, UpdateDate) 
         VALUES 
-          (1, 'Exploring the City', 'angry', 'This post is about the best spots in the city for sightseeing.', '2024-10-10T00:00:00.000Z', '2024-10-10T00:00:00.000Z'),
-          (1, 'Cooking Tips', 'angry', 'A guide to the most common cooking mistakes and how to avoid them.', '2024-10-12T00:00:00.000Z', '2024-10-12T00:00:00.000Z'),
-          (1, 'Tech Trends', 'angry', 'Here are the latest trends in technology you should watch for in 2025.', '2024-11-10T00:00:00.000Z', '2024-11-10T00:00:00.000Z'),
-          (1, 'Travel Essentials', 'angry', 'What to pack when traveling abroad to ensure a smooth trip.', '2024-11-12T00:00:00.000Z', '2024-11-12T00:00:00.000Z')
+          (1, 'Exploring the City', 'angry', 'This post is about the best spots in the city for sightseeing.', '2024-10-10T04:52:54.843Z', '2024-10-10T04:52:54.843Z'),
+          (1, 'Cooking Tips', 'angry', 'A guide to the most common cooking mistakes and how to avoid them.', '2024-10-12T04:52:54.843Z', '2024-10-12T04:52:54.843Z'),
+          (1, 'Tech Trends', 'angry', 'Here are the latest trends in technology you should watch for in 2025.', '2024-11-10T04:52:54.843Z', '2024-11-10T04:52:54.843Z'),
+          (1, 'Travel Essentials', 'angry', 'What to pack when traveling abroad to ensure a smooth trip.', '2024-11-12T04:52:54.843Z', '2024-11-12T04:52:54.843Z')
       `);
     } catch (error) {
       console.error("Error inserting post:", error);

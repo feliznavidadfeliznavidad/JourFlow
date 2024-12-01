@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { Calendar, DateData } from "react-native-calendars";
 import { Theme } from "react-native-calendars/src/types";
-import { Dimensions, View, Text, StyleSheet, TouchableOpacity, Pressable } from "react-native";
+import { Dimensions, View, Text, StyleSheet, TouchableOpacity, Pressable, Alert } from "react-native";
 import LottieView from "lottie-react-native";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { router } from "expo-router";
@@ -19,11 +19,7 @@ interface DayComponentProps {
     timestamp: number;
     dateString: string;
   };
-  marking?: {
-    marked?: boolean;
-    dot?: DotType | DotType[];
-  };
-  onPress?: (date: DateData) => void;
+  marking?: MarkedDates
 }
 
 interface DotType {
@@ -33,61 +29,12 @@ interface DotType {
 interface MarkedDates {
   [key: string]: {
     marked: boolean;
+    postDate: Date;
+    updateDate: Date;
     dot?: DotType | DotType[];
   };
-}
+}[];
 
-const DayComponent: React.FC<DayComponentProps> = ({ date, marking, onPress }) => {
-  const dayOfWeek = new Date(date.timestamp).getDay();
-  const dateToCheck = new Date(date.timestamp);
-
-  const textColor =
-    dayOfWeek === 6
-      ? colors.saturday
-      : dayOfWeek === 0
-      ? colors.sunday
-      : colors.textInLight;
-
-  const opacity =
-    dateToCheck > new Date() ? 0.3 : 1;
-
-  const renderDots = () => {
-    if (!marking?.dot) return null;
-
-    const dots = Array.isArray(marking.dot) ? marking.dot : [marking.dot];
-
-    return (
-      <View style={styles.lottieContainer}>
-        {dots.map((dot, index) => (
-          <LottieView
-            key={`${date.dateString}-${index}`}
-            source={dot.lottieFile}
-            autoPlay
-            loop
-            style={styles.lottieDot}
-          />
-        ))}
-      </View>
-    );
-  };
-
-  return (
-    <TouchableOpacity
-      style={styles.dayContainer}
-      onPress={() => onPress?.(date)}
-    >
-      <View style={styles.dayContent}>
-        {marking?.dot ? (
-          renderDots()
-        ) : (
-          <Text style={[styles.dayText, { color: textColor, opacity }]}>
-            {date.day}
-          </Text>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
-};
 
 const CustomCalendar: React.FC = () => {
   const [markedDates, setMarkedDates] = useState<MarkedDates>({});
@@ -98,6 +45,7 @@ const CustomCalendar: React.FC = () => {
     const initializeApp = async () => {
       await DatabaseService.init();
       await DatabaseService.insertUser(); // Insert clone user data for testing
+      // await DatabaseService.insertPost(); // Insert clone post data for testing
       await loadMarkedDates();
     };
 
@@ -105,60 +53,120 @@ const CustomCalendar: React.FC = () => {
     todayCheck();
   }, []);
 
+  const DayComponent: React.FC<DayComponentProps> = ({ date, marking }) => {
+    const _date = new Date(date.timestamp);
+  
+    const textColor =
+      _date.getDay() === 6
+        ? colors.saturday
+        : _date.getDay() === 0
+        ? colors.sunday
+        : colors.textInLight;
+  
+    const opacity =
+      _date > today ? 0.3 : 1;
+  
+    const renderDots = () => {
+      if (!marking?.dot) return null;
+  
+      const dots = Array.isArray(marking.dot) ? marking.dot : [marking.dot];
+  
+      return (
+        <View style={styles.lottieContainer}>
+          {dots.map((dot, index) => (
+            <LottieView
+              key={`${date.dateString}-${index}`}
+              source={dot.lottieFile}
+              autoPlay
+              loop
+              style={styles.lottieDot}
+            />
+          ))}
+        </View>
+      );
+    };
+  
+    return (
+      <TouchableOpacity
+        style={styles.dayContainer}
+        onPress={() => {
+          return handleDayPress(_date);
+        }}
+      >
+        <View style={styles.dayContent}>
+          {marking?.dot ? (
+            renderDots()
+          ) : (
+            <Text style={[styles.dayText, { color: textColor, opacity }]}>
+              {date.day}
+            </Text>
+          )}
+        </View>
+      </TouchableOpacity>
+    );
+  };
+  
   const loadMarkedDates = async () => {
     try {
       const posts = await DatabaseService.getPosts();
       const newMarkedDates: MarkedDates = {};
 
       posts.forEach(post => {
-        const formattedDate = format(post.PostDate, "yyyy-MM-dd");
-        newMarkedDates[formattedDate] = {
-          marked: true,
-          dot: {
-            lottieFile: icons[post.IconPath]
-          }
-        };
+        if( post ){
+          try {
+            const formattedDate = format(post.PostDate, "yyyy-MM-dd");
+            newMarkedDates[formattedDate] = {
+              marked: true ,
+              postDate: new Date(post.PostDate), 
+              updateDate: new Date(post.UpdateDate),
+              dot: {
+                lottieFile: icons[post.IconPath],
+              }
+            }; 
+          } catch (error) {
+            console.error("Error parsing date:", error);
+          } 
+        }
       });
-      await setMarkedDates(newMarkedDates);
+      // console.log(`newMarkedDates ${newMarkedDates['2024-11-11'].marked}`);
+      setMarkedDates(newMarkedDates);
     } catch (error) {
       console.error("Error loading marked dates:", error);
     }
   };
 
-  const handleDayPress = useCallback((day: Date | DateData) => {
-    const date = day instanceof Date 
-      ? today 
-      : new Date(
-          day.year, 
-          day.month - 1, 
-          day.day, 
-          today.getHours(), 
-          today.getMinutes(), 
-          today.getSeconds(), 
-          today.getMilliseconds()
-        );
-  
-    const formattedDate = date.toISOString();
+  const handleDayPress = useCallback((postDate: Date) => {
+    if ( postDate < today){
+      const formattedDate = postDate.toISOString();
+      console.log(`postDate:${ formattedDate}`);
+      
+      
+      DatabaseService.existingDateOfPost(postDate)
+        .then((exists) => {
+          if (exists) {
+            console.log("Date already exists");
+            router.push({
+              pathname: "DetailScreen",
+              params: { formattedDate},
+            });
+            return;
+          }
     
-    DatabaseService.existingDateOfPost(date)
-      .then((exists) => {
-        if (exists) {
+          setSelectedDate(postDate);
           router.push({
-            pathname: "DetailScreen",
+            pathname: "PickFeelingScreen",
             params: { formattedDate },
           });
-          return;
-        }
-  
-        setSelectedDate(date);
-        router.push({
-          pathname: "PickFeelingScreen",
-          params: { formattedDate },
+        })
+        .catch((error) => {
+          console.error("Error:", error);
         });
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-      });
+    } 
+    else {
+      Alert.alert("Error", "Please select a date before today");
+      return;
+    }
+      
   }, [today]);
 
   const calendarTheme: Theme = {
@@ -191,6 +199,16 @@ const CustomCalendar: React.FC = () => {
   const handleSettingPress = () => {
     router.push("SettingScreen");
   };
+  
+  const printData = async () => {
+    try {
+      DatabaseService.insertPost();
+      const posts = await DatabaseService.getPosts();
+      console.log("Posts:", posts);
+    } catch (error) {
+      console.error("Error printing data:", error);
+    }
+  }
 
   return (
     <View style={styles.container}>
@@ -210,6 +228,12 @@ const CustomCalendar: React.FC = () => {
           dayComponent={DayComponent}
         />
       </View>
+          <Pressable 
+            style={styles.button} 
+            onPress={printData}
+          >
+            <Text style={styles.buttonText}>add + Print Data</Text>
+        </Pressable>
 
       <View style={styles.submitContainer}>
         <TouchableOpacity
