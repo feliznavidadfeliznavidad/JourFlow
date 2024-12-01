@@ -178,7 +178,7 @@ const SettingScreen = () => {
                 style={styles.settingItem}
                 onPress={() => printData()}
               >
-                <Feather name="list" size={24} color="black" />
+                <Feather name="code" size={24} color="black" />
                 <Text style={styles.settingText}>Add + Print Data</Text>
               </Pressable>
               
