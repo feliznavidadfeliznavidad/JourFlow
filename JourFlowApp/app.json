@@ -18,13 +18,15 @@
       "backgroundColor": "#FAF7F0",
       "infoPlist": {
         "UIViewControllerBasedStatusBarAppearance": false
-      }
+      },
+      "bundleIdentifier": "com.duyntb.JourFlowAppTest01"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.duyntb.JourFlowAppTest01"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -32,6 +34,14 @@
     "plugins": [
       "expo-router",
       "expo-sqlite"
-    ]
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "452bca73-0dee-4286-9288-fd259081f9ac"
+      }
+    }
   }
 }
