@@ -22,12 +22,12 @@ import { Footer } from '../components/FooterActions';
 
 interface Post {
   id: number;
-  userId: number;
-  Title: string;
-  IconPath: IconPath;
-  Content: string;
-  PostDate: string;
-  UpdateDate: string;
+  user_id: number;
+  title: string;
+  icon_path: IconPath;
+  content: string;
+  post_date: string;
+  update_date: string;
 }
 
 const Content = () => {
@@ -49,24 +49,27 @@ const Content = () => {
   const checkExists = async () => {
     try {
       const date = new Date(formattedDate);
-      const exists = await DatabaseService.existingDateOfPost(date);
+      const exists = await DatabaseService.hasPostsOnDate(date); 
+      // const exists = await DatabaseService.existingDateOfPost(date);
   
       if (exists) {
         setExistingPost(true);
-        const post = await DatabaseService.getPostByDate(date);
+        const post = await DatabaseService.getPostsByDate(date)
+        // const post = await DatabaseService.getPostByDate(date);
   
         if (post && post.length > 0) {
           setPostData(post);
-          setTitle(post[0].Title);
-          setContent(post[0].Content);
+          setTitle(post[0].title);
+          setContent(post[0].content);
           setCurrentPostId(post[0].id);
           if (!iconFromParams) {
-            setCurrentIcon(post[0].IconPath);
+            setCurrentIcon(post[0].icon_path);
           } else {
             setCurrentIcon(iconFromParams);
           }
   
-          const images = await DatabaseService.getImagesByPostId(post[0].id);
+          const images = await DatabaseService.getPostImages(post[0].id);
+          // const images = await DatabaseService.getImagesByPostId(post[0].id);
           if (images && images.length > 0) {
             const formattedImages = images.map((img) => ({ uri: img.url }));
             setImages(formattedImages);
@@ -95,13 +98,17 @@ const Content = () => {
     }
   
     try {
-      const savedImgPaths = await saveImgsToLocalStorage();
-      
+      const images = await saveImgsToLocalStorage();
+
+      console.log("TEST BY DUY IN DETAIL SCREEN ", images);
+
+      const updateData = { title, content, images };
       if (currentPostId) {
-        await DatabaseService.updatePost(currentPostId, title, content, savedImgPaths);
+        await DatabaseService.updatePost(currentPostId, updateData);
+
         setIsEditing(false);
         Alert.alert("Success", "Post updated successfully");
-        await checkExists(); // Refresh data
+        await checkExists(); 
       }
     } catch (error) {
       console.error("Error in handleUpdate: ", error);
@@ -170,14 +177,13 @@ const Content = () => {
   
     try {
       const savedImgPaths = await saveImgsToLocalStorage();
+      const user_id = 1;
+
+      const post_date = receiveDate.toISOString();
       
-      await DatabaseService.createPost(
-        title,
-        content,
-        currentIcon,
-        receiveDate,
-        savedImgPaths
-      );
+      const postData = {title, content, icon_path: currentIcon, user_id, post_date, images: savedImgPaths};
+
+      await DatabaseService.createPost(postData);
   
       setImages([]);
       setTitle("");

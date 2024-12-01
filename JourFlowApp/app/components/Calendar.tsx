@@ -20,9 +20,9 @@ import icons, { IconPath } from "../../assets/icon/icon";
 
 // Enhanced type definitions with improved type safety
 interface Post {
-  PostDate: string;
-  UpdateDate: string;
-  IconPath: IconPath;
+  post_date: string;
+  update_date: string;
+  icon_path: IconPath;
 }
 
 interface DayComponentProps {
@@ -36,8 +36,8 @@ interface DotType {
 
 interface MarkedDateInfo {
   marked: boolean;
-  postDate: Date;
-  updateDate: Date;
+  post_date: Date;
+  update_date: Date;
   dot?: DotType | DotType[];
 }
 
@@ -58,8 +58,9 @@ const CustomCalendar: React.FC = () => {
   useEffect(() => {
     const initializeApp = async () => {
       try {
+
         await DatabaseService.init();
-        await DatabaseService.insertUser(); // Insert clone user data for testing
+        await DatabaseService.insertFakeUser(); // Insert clone user data for testing
         await loadMarkedDates();
         await checkTodayEntry();
       } catch (error) {
@@ -143,13 +144,13 @@ const CustomCalendar: React.FC = () => {
       posts.forEach(post => {
         if (post) {
           try {
-            const formattedDate = format(parseISO(post.PostDate), "yyyy-MM-dd");
+            const formattedDate = format(parseISO(post.post_date), "yyyy-MM-dd");
             newMarkedDates[formattedDate] = {
               marked: true,
-              postDate: new Date(post.PostDate),
-              updateDate: new Date(post.UpdateDate),
+              post_date: new Date(post.post_date),
+              update_date: new Date(post.update_date),
               dot: {
-                lottieFile: icons[post.IconPath],
+                lottieFile: icons[post.icon_path],
               }
             };
           } catch (error) {
@@ -174,7 +175,8 @@ const CustomCalendar: React.FC = () => {
 
     const formattedDate = postDate.toISOString();
     
-    DatabaseService.existingDateOfPost(postDate)
+    DatabaseService.hasPostsOnDate(postDate)
+    // DatabaseService.existingDateOfPost(postDate)
       .then((exists) => {
         if (exists) {
           // Navigate to detail screen if post already exists
@@ -196,7 +198,8 @@ const CustomCalendar: React.FC = () => {
   // Check if today's entry exists
   const checkTodayEntry = useCallback(async () => {
     try {
-      const exists = await DatabaseService.existingDateOfPost(today);
+      const exists = await DatabaseService.hasPostsOnDate(today)
+      // const exists = await DatabaseService.existingDateOfPost(today);
       setIsToday(!exists);
     } catch (error) {
       handleError(error, "checking today's entry");
@@ -223,7 +226,7 @@ const CustomCalendar: React.FC = () => {
   // Debug method to insert and print posts
   const printData = useCallback(async () => {
     try {
-      await DatabaseService.insertPost();
+      await DatabaseService.insertFakePost();
       const posts = await DatabaseService.getPosts();
       console.log("Posts:", posts);
       
@@ -257,12 +260,12 @@ const CustomCalendar: React.FC = () => {
       </View>
 
       {/* Debug Button for Adding Posts */}
-      <Pressable 
+      {/* <Pressable 
         style={styles.button} 
         onPress={printData}
       >
         <Text style={styles.buttonText}>Add + Print Data</Text>
-      </Pressable>
+      </Pressable> */}
 
       {/* Submit Button for Today's Entry */}
       <View style={styles.submitContainer}>

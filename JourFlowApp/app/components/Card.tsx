@@ -15,30 +15,34 @@ const { width, height } = Dimensions.get("window");
 import DatabaseService from "../services/database_service";
 import { router, useFocusEffect } from "expo-router";
 
+
 interface Post {
   id: number;
-  userId: number;
-  Title: string;
-  IconPath: IconPath;
-  Content: string;
-  PostDate: string;
-  UpdateDate: string;
+  user_id: number;
+  title: string;
+  icon_path: IconPath;
+  content: string;
+  post_date: string;
+  update_date: string;
 }
 
 interface Imgs {
   id: number;
-  postId: number;
+  post_id: number;
   url: string;
 }
 
 const Card: React.FC<Post> = (Post) => {
   const [imgs, setImgs] = useState<Imgs[]>([]);
 
-  const dateString = new Date(Post.PostDate);
+  const dateString = new Date(Post.post_date);
+
+  console.log("TEST TEST: " + dateString)
 
   const loadImgs = async () => {
     try {
-      const data = await DatabaseService.getImagesByPostId(Post.id);
+      const data = await DatabaseService.getPostImages(Post.id);
+      // const data = await DatabaseService.getImagesByPostId(Post.id);
       if (data.length > 0) {
         setImgs(data);
       }
@@ -57,7 +61,7 @@ const Card: React.FC<Post> = (Post) => {
     <FontLoader>
       <Pressable
         onPress={() => {
-          const formattedDate = Post.PostDate;
+          const formattedDate = Post.post_date;
           router.push({
             pathname: "DetailScreen",
             params: { formattedDate },
@@ -70,7 +74,7 @@ const Card: React.FC<Post> = (Post) => {
               <View style={styles.header}>
                 <View style={styles.iconArea}>
                   <LottieView
-                    source={icons[Post.IconPath]}
+                    source={icons[Post.icon_path]}
                     autoPlay
                     loop
                     style={styles.icon}
@@ -91,7 +95,7 @@ const Card: React.FC<Post> = (Post) => {
                   ellipsizeMode="tail"
                   style={styles.contentText}
                 >
-                  {Post.Title?.length > 0 ? Post.Title : Post.Content}
+                  {Post.title?.length > 0 ? Post.title : Post.content}
                 </Text>
               </View>
             </View>

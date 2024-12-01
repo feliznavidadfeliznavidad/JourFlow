@@ -1,5 +1,5 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import React from "react";
+import React, { useCallback } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import FontLoader from "../services/FontsLoader";
 import Feather from "@expo/vector-icons/Feather";
@@ -15,11 +15,11 @@ const SettingScreen = () => {
     alert("Comming Soon!");
   };
 
-  const handlePressSignOut = () => {
+  const handleSignOutPress = () => {
     router.navigate("/");
   };
 
-  const handlePressDeleteAll = async () => {
+  const handleDeleteAllPress = async () => {
     try {
       await DatabaseService.clearDatabase();
       alert("All posts have been deleted successfully!");
@@ -28,17 +28,43 @@ const SettingScreen = () => {
       console.error("Error deleting all posts:", error);
     }
   };
+
+  const handleLoadAllImgsPress = async () => {
+    try {
+      const data = await DatabaseService.getAllImages();
+      console.log(data);
+      alert("All images have been loaded successfully!");
+    } catch (error: any) {
+      alert(error.message);
+      console.error("Error load:", error);
+    }
+  };
+
   const handleBackup = async () => {
     try {
       const posts = await DatabaseService.getPosts();
-      const images = await DatabaseService.getImages();
-      SyncDbService.addPost(posts);
+      const images = await DatabaseService.getAllImages();
+      // SyncDbService.addPost(posts);
       alert("Backup completed successfully!");
     } catch (error: any) {
       alert(error.message);
       console.error("Error backing up database:", error);
     }
   }
+  
+  const printData = useCallback(async () => {
+    try {
+      await DatabaseService.insertFakePost();
+      const posts = await DatabaseService.getPosts();
+      console.log("Posts:", posts);
+      
+      // Optionally refresh marked dates after insertion
+      // await loadMarkedDates();
+    } catch (error) {
+      handleError(error, "printing data");
+    }
+  }, [handleError]);
+
   return (
     <FontLoader>
       <SafeAreaView style={styles.safeArea}>
@@ -130,7 +156,7 @@ const SettingScreen = () => {
 
               <Pressable
                 style={styles.settingItem}
-                onPress={() => handlePressSignOut()}
+                onPress={() => handleSignOutPress()}
               >
                 <Feather name="log-out" size={24} color="black" />
                 <Text style={styles.settingText}>Sign out</Text>
@@ -142,12 +168,27 @@ const SettingScreen = () => {
 
               <Pressable
                 style={styles.settingItem}
-                onPress={() => handlePressDeleteAll()}
+                onPress={() => handleDeleteAllPress()}
               >
                 <Feather name="trash" size={24} color="black" />
                 <Text style={styles.settingText}>Remove All Data</Text>
               </Pressable>
+
+              <Pressable
+                style={styles.settingItem}
+                onPress={() => printData()}
+              >
+                <Feather name="list" size={24} color="black" />
+                <Text style={styles.settingText}>Add + Print Data</Text>
+              </Pressable>
               
+              <Pressable
+                style={styles.settingItem}
+                onPress={() => handleLoadAllImgsPress()}
+              >
+                <Feather name="list" size={24} color="black" />
+                <Text style={styles.settingText}>Show All Images</Text>
+              </Pressable>
           </ScrollView>
         </View>
       </SafeAreaView>
@@ -241,3 +282,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
+
+function handleError(error: unknown, arg1: string) {
+  throw new Error("Function not implemented.");
+}

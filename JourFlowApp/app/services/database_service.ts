@@ -3,30 +3,26 @@ import { IconPath } from "../../assets/icon/icon";
 
 interface Post {
   id: number;
-  userId: number;
-  Title: string;
-  IconPath: IconPath;
-  Content: string;
-  PostDate: string;
-  UpdateDate: string;
+  user_id: number;
+  title: string;
+  icon_path: IconPath;
+  content: string;
+  post_date: string;
+  update_date: string;
 }
 
 interface User {
   id: number;
-  userName: string;
-  JWT: string;
-  ggAccessToken: string;
-  refreshJWTToken: string;
+  username: string;
+  jwt: string;
+  google_access_token: string;
+  refresh_token: string;
 }
 
-interface Imgs {
+interface Image {
   id: number;
-  postId: number;
+  post_id: number;
   url: string;
-}
-
-interface CountResult {
-  count: number;
 }
 
 const DatabaseService = {
@@ -37,43 +33,43 @@ const DatabaseService = {
       await this.db.execAsync(`
         PRAGMA foreign_keys = ON;   
         
-        CREATE TABLE IF NOT EXISTS User (
-          Id INTEGER PRIMARY KEY AUTOINCREMENT,
-          UserName TEXT NULL,
-          JWT TEXT NOT NULL,
-          GgAccessToken TEXT NOT NULL,
-          RefreshJWTToken TEXT NOT NULL
+        CREATE TABLE IF NOT EXISTS users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          username TEXT NULL,
+          jwt TEXT NOT NULL,
+          google_access_token TEXT NOT NULL,
+          refresh_token TEXT NOT NULL
         );
         
-        CREATE TABLE IF NOT EXISTS Posts (
-          Id INTEGER PRIMARY KEY AUTOINCREMENT,
-          UserId INTEGER,
-          Title TEXT NOT NULL,
-          IconPath TEXT NOT NULL,
-          Content TEXT NOT NULL,
-          PostDate TEXT NOT NULL,
-          UpdateDate TEXT NOT NULL,
-          FOREIGN KEY(userId) REFERENCES User(id) ON DELETE CASCADE
+        CREATE TABLE IF NOT EXISTS posts (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER,
+          title TEXT NOT NULL,
+          icon_path TEXT NOT NULL,
+          content TEXT NOT NULL,
+          post_date TEXT NOT NULL,
+          update_date TEXT NOT NULL,
+          FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
         );
 
-        CREATE TABLE IF NOT EXISTS IMGs (
-          Id INTEGER PRIMARY KEY AUTOINCREMENT,
-          PostId INTEGER,
-          Url TEXT NULL,
-          FOREIGN KEY(postId) REFERENCES Posts(id) ON DELETE CASCADE
+        CREATE TABLE IF NOT EXISTS images (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          post_id INTEGER,
+          url TEXT NULL,
+          FOREIGN KEY(post_id) REFERENCES posts(id) ON DELETE CASCADE
         );
       `);
       console.log("Database initialized successfully");
     } catch (error) {
       console.error("Database initialization error:", error);
+      throw error;
     }
-
   },
 
-  async insertUser() {
+  async insertFakeUser() {
     try {
       await this.db.execAsync(`
-        INSERT INTO User (userName, JWT, ggAccessToken, refreshJWTToken) 
+        INSERT INTO users (username, jwt, google_access_token, refresh_token) 
         VALUES 
           ('Nicole', 'jwt ne', 'gg access token', 'refresh token'),
           ('Benjamin', 'jwt ne', 'gg access token', 'refresh token'),
@@ -85,10 +81,24 @@ const DatabaseService = {
     }
   },
 
-  async insertPost() {
+  async insertUser(user: Omit<User, 'id'>): Promise<number> {
+    try {
+      const result = await this.db.runAsync(
+        `INSERT INTO users (username, jwt, google_access_token, refresh_token) 
+         VALUES (?, ?, ?, ?)`,
+        [user.username, user.jwt, user.google_access_token, user.refresh_token]
+      );
+      return result.lastInsertRowId;
+    } catch (error) {
+      console.error("Error inserting user:", error);
+      throw error;
+    }
+  },
+
+  async insertFakePost() {
     try {
       await this.db.execAsync(`
-        INSERT INTO Posts (userId, Title, IconPath, Content, PostDate, UpdateDate) 
+        INSERT INTO posts (user_id, title, icon_path, content, post_date, update_date) 
         VALUES 
           (1, 'Exploring the City', 'angry', 'This post is about the best spots in the city for sightseeing.', '2024-10-10T04:52:54.843Z', '2024-10-10T04:52:54.843Z'),
           (1, 'Cooking Tips', 'angry', 'A guide to the most common cooking mistakes and how to avoid them.', '2024-10-12T04:52:54.843Z', '2024-10-12T04:52:54.843Z'),
@@ -101,89 +111,29 @@ const DatabaseService = {
     }
   },
 
-  async getPosts(): Promise<Post[]> {
+  async createPost(post: {
+    title: string;
+    content: string;
+    icon_path: string;
+    user_id: number;
+    post_date: string;
+    images?: string[];
+  }): Promise<number> {
     try {
-      return await this.db.getAllAsync<Post>("SELECT * FROM Posts");
-    } catch (error) {
-      console.error("Error fetching posts:", error);
-      throw error;
-    }
-  },
-
-  async getPostByDate(date: Date): Promise<Post[]> {
-    const formattedDate = date.toISOString().split('T')[0]; 
-    try {
-      return await this.db.getAllAsync<Post>(`SELECT * FROM Posts WHERE DATE(PostDate) = ?`, [formattedDate]);
-    } catch (error) {
-      console.error("Error fetching posts:", error);
-      throw error;
-    }
-  },
-
-  async getUsers(): Promise<User[]> {
-    try {
-      return await this.db.getAllAsync<User>("SELECT * FROM User");
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      throw error;
-    }
-  },
-
-  async getImages(): Promise<Imgs[]> {
-    try {
-      return await this.db.getAllAsync<Imgs>("SELECT * FROM IMGs");
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      throw error;
-    }
-  },
-
-  async getImagesByPostId(postId: number): Promise<Imgs[]> {
-    try {
-      return await this.db.getAllAsync<Imgs>(
-        `SELECT * FROM Imgs WHERE postId = ${postId}`
-      );
-    } catch (error) {
-      console.error("Error fetching images by postId:", error);
-      throw error;
-    }
-  },
-
-  async createPost(
-    title: string,
-    content: string,
-    iconPath: string,
-    postDate: Date,
-    savedImgPaths: string[]
-  ): Promise<number> {
-    try {
-      const sanitizedTitle = title.replace(/'/g, "''");
-      const sanitizedContent = content.replace(/'/g, "''");
-      const sanitizedIconPath = iconPath.replace(/'/g, "''");
+      const { title, content, icon_path, user_id, post_date, images = [] } = post;
 
       const postResult = await this.db.runAsync(
-        `INSERT INTO Posts (userId, Title, IconPath, Content, PostDate, UpdateDate)
+        `INSERT INTO posts (user_id, title, icon_path, content, post_date, update_date)
          VALUES (?, ?, ?, ?, ?, ?)`,
-        [
-          1, // userId mặc định
-          sanitizedTitle,
-          sanitizedIconPath,
-          sanitizedContent,
-          postDate.toISOString(),
-          new Date().toISOString()
-        ]
+        [user_id, title, icon_path, content, post_date, post_date]
       );
 
       const postId = postResult.lastInsertRowId;
 
-      if (savedImgPaths.length > 0) {
-        await Promise.all(
-          savedImgPaths.map(async (imgPath) => {
-            await this.db.runAsync(
-              `INSERT INTO IMGs (postId, url) VALUES (?, ?)`,
-              [postId, imgPath]
-            );
-          })
+      if (images.length > 0) {
+        const imageValues = images.map(url => `(${postId}, '${url}')`).join(',');
+        await this.db.execAsync(
+          `INSERT INTO images (post_id, url) VALUES ${imageValues}`
         );
       }
 
@@ -194,61 +144,137 @@ const DatabaseService = {
     }
   },
 
-  async clearDatabase() {
+  async getAllImages(): Promise<Image[]> {
     try {
-      await this.db.execAsync(`
-          DROP TABLE IF EXISTS IMGs;
-          DROP TABLE IF EXISTS Posts;
-          DROP TABLE IF EXISTS User;
-        `);
-      console.log("Database cleared successfully");
+      return await this.db.getAllAsync<Image>("SELECT * FROM images");
+
     } catch (error) {
-      console.error("Error clearing database:", error);
+      console.error("Error fetching data:", error);
       throw error;
     }
   },
 
-  async existingDateOfPost(date: Date): Promise<boolean> {
-    const formattedDate = date.toISOString().split('T')[0]; 
+  async getPosts(): Promise<Post[]> {
     try {
-      const result = await this.db.getAllAsync<{ count: number }>(
-        `SELECT COUNT(*) as count FROM Posts WHERE DATE(PostDate) = ?`,
-        [formattedDate]
-      );
-      const count = result[0]?.count;
-      return count > 0;
+      const posts = await this.db.getAllAsync<any>(`
+        SELECT 
+          id,
+          user_id,
+          title,
+          icon_path,
+          content,
+          post_date,
+          update_date
+        FROM posts
+      `);
+
+      return posts;
     } catch (error) {
-      console.error("Error checking date existence:", error);
+      console.error("Error fetching posts:", error);
       throw error;
     }
   },
 
-  async updatePost(postId: number, title: string, content: string, savedImgPaths: string[]): Promise<void> {
+  async getPostsByDate(date: Date): Promise<Post[]> {
+    const formattedDate = date.toISOString().split('T')[0];
     try {
-      // Update post
-      await this.db.runAsync(
-        `UPDATE Posts 
-         SET Title = ?, Content = ?, UpdateDate = ?
-         WHERE id = ?`,
-        [title, content, new Date().toISOString(), postId]
-      );
+      const posts = await this.db.getAllAsync<any>(`
+        SELECT 
+          id,
+          user_id,
+          title,
+          icon_path,
+          content,
+          post_date,
+          update_date
+        FROM posts 
+        WHERE DATE(post_date) = ?
+      `, [formattedDate]);
+      return posts;
+    } catch (error) {
+      console.error("Error fetching posts by date:", error);
+      throw error;
+    }
+  },
 
-      // Delete existing images
-      await this.db.runAsync(
-        `DELETE FROM IMGs WHERE postId = ?`,
+  async getUsers(): Promise<User[]> {
+    try {
+      const users = await this.db.getAllAsync<any>(`
+        SELECT 
+          id,
+          username,
+          jwt,
+          google_access_token,
+          refresh_token
+        FROM users
+      `);
+      return users;
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      throw error;
+    }
+  },
+
+  async getPostImages(postId: number): Promise<Image[]> {
+    try {
+      const images = await this.db.getAllAsync<Image>(
+        `SELECT * FROM images WHERE post_id = ?`,
         [postId]
       );
+      console.log("Images from DB " + JSON.stringify(images));
+      return images;
+    } catch (error) {
+      console.error("Error fetching images by postId:", error);
+      throw error;
+    }
+  },
 
-      // Insert new images
-      if (savedImgPaths.length > 0) {
-        await Promise.all(
-          savedImgPaths.map(async (imgPath) => {
-            await this.db.runAsync(
-              `INSERT INTO IMGs (postId, url) VALUES (?, ?)`,
-              [postId, imgPath]
-            );
-          })
+  async updatePost(
+    postId: number,
+    updates: {
+      title?: string;
+      content?: string;
+      images?: string[];
+    }
+  ): Promise<void> {
+    try {
+      const { title, content, images } = updates;
+
+      console.log("TEST BY DUY IN UPDATE POST", images);
+
+      const updateDate = new Date().toISOString();
+
+      // Build update query dynamically based on provided fields
+      const updateFields = [];
+      const params = [];
+      
+      if (title !== undefined) {
+        updateFields.push('title = ?');
+        params.push(title);
+      }
+      if (content !== undefined) {
+        updateFields.push('content = ?');
+        params.push(content);
+      }
+      updateFields.push('update_date = ?');
+      params.push(updateDate);
+      
+      if (updateFields.length > 0) {
+        params.push(postId);
+        await this.db.runAsync(
+          `UPDATE posts SET ${updateFields.join(', ')} WHERE id = ?`,
+          params
         );
+      }
+
+      if (images !== undefined) {
+        await this.db.runAsync('DELETE FROM images WHERE post_id = ?', [postId]);
+        if (images.length > 0) {
+          const imageValues = images.map(url => `(${postId}, '${url}')`).join(',');
+          await this.db.execAsync(
+            `INSERT INTO images (post_id, url) VALUES ${imageValues}`
+          );
+        }
       }
     } catch (error) {
       console.error("Error in updatePost:", error);
@@ -258,20 +284,38 @@ const DatabaseService = {
 
   async deletePost(postId: number): Promise<void> {
     try {
-      // Delete images first (foreign key constraint will handle this automatically,
-      // but we're keeping it explicit for clarity)
-      await this.db.runAsync(
-        `DELETE FROM IMGs WHERE postId = ?`,
-        [postId]
-      );
-
-      // Delete post
-      await this.db.runAsync(
-        `DELETE FROM Posts WHERE id = ?`,
-        [postId]
-      );
+      await this.db.runAsync('DELETE FROM posts WHERE id = ?', [postId]);
     } catch (error) {
       console.error("Error in deletePost:", error);
+      throw error;
+    }
+  },
+
+  async hasPostsOnDate(date: Date): Promise<boolean> {
+    const formattedDate = date.toISOString().split('T')[0];
+    try {
+      const result = await this.db.getAllAsync<{ count: number }>(
+        `SELECT COUNT(*) as count FROM posts WHERE DATE(post_date) = ?`,
+        [formattedDate]
+      );
+      return result[0]?.count > 0;
+    } catch (error) {
+      console.error("Error checking posts existence:", error);
+      throw error;
+    }
+  },
+
+  async clearDatabase(): Promise<void> {
+    try {
+      await this.db.execAsync(`
+        DROP TABLE IF EXISTS images;
+        DROP TABLE IF EXISTS posts;
+        DROP TABLE IF EXISTS users;
+      `);
+      console.log("Database cleared successfully");
+      await this.init();
+    } catch (error) {
+      console.error("Error clearing database:", error);
       throw error;
     }
   }

@@ -12,22 +12,23 @@ import icons, { IconPath } from "../../assets/icon/icon";
 import DatabaseService from "../services/database_service";
 import Feather from "@expo/vector-icons/Feather";
 
+
 interface Post {
   id: number;
-  userId: number;
-  Title: string;
-  IconPath: IconPath;
-  Content: string;
-  PostDate: string;
-  UpdateDate: string;
+  user_id: number;
+  title: string;
+  icon_path: IconPath;
+  content: string;
+  post_date: string;
+  update_date: string;
 }
+
 const Feed = () => {
   const [posts, setPosts] = useState<Post[]>([]);
 
   const loadPosts = async () => {
     try {
       const data = await DatabaseService.getPosts();
-      console.log(data);
       setPosts(data);
     } catch (error) {
       console.error("Error fetching posts:", error);
@@ -57,12 +58,12 @@ const Feed = () => {
                 <Card
                   key={index}
                   id={post.id}
-                  userId={post.userId}
-                  Title={post.Title}
-                  IconPath={post.IconPath}
-                  Content={post.Content}
-                  PostDate={post.PostDate}
-                  UpdateDate={post.UpdateDate}
+                  user_id={post.user_id}
+                  title={post.title}
+                  icon_path={post.icon_path}
+                  content={post.content}
+                  post_date={post.post_date}
+                  update_date={post.update_date}
                 />
               </View>
             );
