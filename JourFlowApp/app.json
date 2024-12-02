@@ -18,13 +18,15 @@
       "backgroundColor": "#FAF7F0",
       "infoPlist": {
         "UIViewControllerBasedStatusBarAppearance": false
-      }
+      },
+      "bundleIdentifier": "com.nhattoan.JourFlowAppTest01"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.nhattoan.JourFlowAppTest01"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -32,6 +34,14 @@
     "plugins": [
       "expo-router",
       "expo-sqlite"
-    ]
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "3a0d026d-af2b-4a98-8487-03a91d118679"
+      }
+    }
   }
 }
