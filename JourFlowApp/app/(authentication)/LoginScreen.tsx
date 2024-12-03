@@ -19,7 +19,7 @@ import * as WebBrowser from "expo-web-browser";
 
 const { width, height } = Dimensions.get("window");
 const LoginScreen = () => {
-  const iosClientId = "1007829901637-247kkna0msl5946lq0lftbq474qdcpk2.apps.googleusercontent.com"; 
+  const iosClientId = "1007829901637-f24kgq92iivatote38g4oupoetj27gpl.apps.googleusercontent.com"; 
   WebBrowser.maybeCompleteAuthSession();
 
   const config = {
@@ -60,8 +60,8 @@ const LoginScreen = () => {
             <Pressable
               style={styles.googleButton}
               onPress={() => {
-                promptAsync();;
-                // router.replace("(homepage)/HomeScreen");
+                // promptAsync();;
+                router.replace("(homepage)/HomeScreen");
               }}
             >
               <Image

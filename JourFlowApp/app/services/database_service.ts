@@ -1,8 +1,9 @@
 import * as SQLite from "expo-sqlite";
 import { IconPath } from "../../assets/icon/icon";
+import uuid from 'react-native-uuid';
 
 interface Post {
-  id: number;
+  id: string;
   user_id: number;
   title: string;
   icon_path: IconPath;
@@ -21,9 +22,14 @@ interface User {
 
 interface Image {
   id: number;
-  post_id: number;
+  post_id: string;
   url: string;
 }
+
+const randomUUID = () => {
+  return uuid.v4()
+}
+
 
 const DatabaseService = {
   db: SQLite.openDatabaseSync("JourFlow"),
@@ -42,7 +48,7 @@ const DatabaseService = {
         );
         
         CREATE TABLE IF NOT EXISTS posts (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          id TEXT PRIMARY KEY,
           user_id INTEGER,
           title TEXT NOT NULL,
           icon_path TEXT NOT NULL,
@@ -54,7 +60,7 @@ const DatabaseService = {
 
         CREATE TABLE IF NOT EXISTS images (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          post_id INTEGER,
+          post_id TEXT,
           url TEXT NULL,
           FOREIGN KEY(post_id) REFERENCES posts(id) ON DELETE CASCADE
         );
@@ -98,13 +104,14 @@ const DatabaseService = {
   async insertFakePost() {
     try {
       await this.db.execAsync(`
-        INSERT INTO posts (user_id, title, icon_path, content, post_date, update_date) 
+        INSERT INTO posts (id, user_id, title, icon_path, content, post_date, update_date) 
         VALUES 
-          (1, 'Exploring the City', 'angry', 'This post is about the best spots in the city for sightseeing.', '2024-10-10T04:52:54.843Z', '2024-10-10T04:52:54.843Z'),
-          (1, 'Cooking Tips', 'angry', 'A guide to the most common cooking mistakes and how to avoid them.', '2024-10-12T04:52:54.843Z', '2024-10-12T04:52:54.843Z'),
-          (1, 'Tech Trends', 'angry', 'Here are the latest trends in technology you should watch for in 2025.', '2024-11-10T04:52:54.843Z', '2024-11-10T04:52:54.843Z'),
-          (1, 'Travel Essentials', 'angry', 'What to pack when traveling abroad to ensure a smooth trip.', '2024-11-12T04:52:54.843Z', '2024-11-12T04:52:54.843Z')
+          ('${randomUUID()}', 1, 'Exploring the City', 'angry', 'This post is about the best spots in the city for sightseeing.', '2024-10-10T04:52:54.843Z', '2024-10-10T04:52:54.843Z'),
+          ('${randomUUID()}', 1, 'Cooking Tips', 'angry', 'A guide to the most common cooking mistakes and how to avoid them.', '2024-10-12T04:52:54.843Z', '2024-10-12T04:52:54.843Z'),
+          ('${randomUUID()}', 1, 'Tech Trends', 'angry', 'Here are the latest trends in technology you should watch for in 2025.', '2024-11-10T04:52:54.843Z', '2024-11-10T04:52:54.843Z'),
+          ('${randomUUID()}', 1, 'Travel Essentials', 'angry', 'What to pack when traveling abroad to ensure a smooth trip.', '2024-11-12T04:52:54.843Z', '2024-11-12T04:52:54.843Z')
       `);
+      console.log("Fake posts inserted successfully");
     } catch (error) {
       console.error("Error inserting post:", error);
       throw error;
@@ -118,26 +125,26 @@ const DatabaseService = {
     user_id: number;
     post_date: string;
     images?: string[];
-  }): Promise<number> {
+  }): Promise<string> {
     try {
       const { title, content, icon_path, user_id, post_date, images = [] } = post;
 
-      const postResult = await this.db.runAsync(
-        `INSERT INTO posts (user_id, title, icon_path, content, post_date, update_date)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [user_id, title, icon_path, content, post_date, post_date]
+      const post_id = randomUUID();
+
+      await this.db.runAsync(
+        `INSERT INTO posts (id, user_id, title, icon_path, content, post_date, update_date)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [post_id, user_id, title, icon_path, content, post_date, post_date]
       );
 
-      const postId = postResult.lastInsertRowId;
-
       if (images.length > 0) {
-        const imageValues = images.map(url => `(${postId}, '${url}')`).join(',');
+        const imageValues = images.map(url => `('${post_id}', '${url}')`).join(',');
         await this.db.execAsync(
           `INSERT INTO images (post_id, url) VALUES ${imageValues}`
         );
       }
 
-      return postId;
+      return post_id;
     } catch (error) {
       console.error("Error in createPost:", error);
       throw error;
@@ -215,7 +222,7 @@ const DatabaseService = {
     }
   },
 
-  async getPostImages(postId: number): Promise<Image[]> {
+  async getPostImages(postId: string): Promise<Image[]> {
     try {
       const images = await this.db.getAllAsync<Image>(
         `SELECT * FROM images WHERE post_id = ?`,
@@ -230,7 +237,7 @@ const DatabaseService = {
   },
 
   async updatePost(
-    postId: number,
+    postId: string,
     updates: {
       title?: string;
       content?: string;
@@ -240,11 +247,8 @@ const DatabaseService = {
     try {
       const { title, content, images } = updates;
 
-      console.log("TEST BY DUY IN UPDATE POST", images);
-
       const updateDate = new Date().toISOString();
 
-      // Build update query dynamically based on provided fields
       const updateFields = [];
       const params = [];
       
@@ -270,7 +274,7 @@ const DatabaseService = {
       if (images !== undefined) {
         await this.db.runAsync('DELETE FROM images WHERE post_id = ?', [postId]);
         if (images.length > 0) {
-          const imageValues = images.map(url => `(${postId}, '${url}')`).join(',');
+          const imageValues = images.map(url => `('${postId}', '${url}')`).join(',');
           await this.db.execAsync(
             `INSERT INTO images (post_id, url) VALUES ${imageValues}`
           );
@@ -282,7 +286,7 @@ const DatabaseService = {
     }
   },
 
-  async deletePost(postId: number): Promise<void> {
+  async deletePost(postId: string): Promise<void> {
     try {
       await this.db.runAsync('DELETE FROM posts WHERE id = ?', [postId]);
     } catch (error) {
