@@ -1,7 +1,7 @@
 import { IconPath } from "../../assets/icon/icon";
 import DatabaseService from "./database_service";
 
-const SERVER_API = 'http://localhost:5004/api/posts'
+const SERVER_API = 'http://localhost:5004/api/posts';
 
 interface Post {
     id: string;
@@ -12,110 +12,102 @@ interface Post {
     post_date: string;
     update_date: string;
     sync_status: number;
-  }
+}
 
-
-const SyncDbService = {
-    getPosts: async () => {
+class SyncDbService {
+    private static async fetchWithErrorHandling(
+        url: string, 
+        options: RequestInit, 
+        successCallback?: () => void
+    ): Promise<string | null> {
         try {
-            const response = await fetch(`${SERVER_API}`).then(res => res.json()).then((json) => console.log(json));
-            return response;
+            const response = await fetch(url, options);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.text();
+            
+            if (data === "success") {
+                successCallback?.();
+                return data;
+            }
+            
+            throw new Error("Unexpected server response");
+        } catch (error) {
+            console.error("Network or server error:", error);
+            throw error;
         }
-        catch (error) {
+    }
+
+    static async getPosts(): Promise<any> {
+        try {
+            const response = await fetch(SERVER_API);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const posts = await response.json();
+            console.log("Fetched posts:", posts);
+            return posts;
+        } catch (error) {
             console.error("Error fetching posts:", error);
             throw error;
         }
-    },
-    addPost: async (posts : Post[]) => {
-        try {
-            const response = await fetch(`${SERVER_API}/add`, {
+    }
+
+    static async addPosts(posts: Post[]): Promise<void> {
+        await this.fetchWithErrorHandling(
+            `${SERVER_API}/add`, 
+            {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(posts)
-            }).then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.text(); // Hoặc response.json() nếu server trả về JSON
-            })
-            .then(data => {
-                console.log("Server Response:", data); // "success"
-                if (data === "success") {
-                    DatabaseService.finishSyncAdd();
-                    alert("Operation succeeded!");
-                }
-            })
-            .catch(error => {
-                console.error("Error:", error);
-            });
-        }
-        catch (error) {
-            console.error("Error adding post:", error);
-            throw error;
-        }
-    },
-    uppdatePost: async (post : Post[]) => {
-        try {
-            const response = await fetch(`${SERVER_API}/update`, {
+            },
+            () => {
+                DatabaseService.finishSyncAdd();
+                alert("Posts added successfully!");
+            }
+        );
+    }
+
+    static async updatePosts(posts: Post[]): Promise<void> {
+        await this.fetchWithErrorHandling(
+            `${SERVER_API}/update`, 
+            {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(post)
-            }).then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.text(); // Hoặc response.json() nếu server trả về JSON
-            })
-            .then(data => {
-                console.log("Server Response:", data); // "success"
-                if (data === "success") {
-                    DatabaseService.finishSyncUpdate();
-                    alert("Operation succeeded!");
-                }
-            })
-            .catch(error => {
-                console.error("Error:", error);
-            });
-        }
-        catch (error) {
-            console.error("Error updating post:", error);
-            throw error;
-        }
-    },
-    deletePost: async (post : Post[]) => {
-        try {
-            const response = await fetch(`${SERVER_API}/delete`, {
+                body: JSON.stringify(posts)
+            },
+            () => {
+                DatabaseService.finishSyncUpdate();
+                alert("Posts updated successfully!");
+            }
+        );
+    }
+
+    static async deletePosts(posts: Post[]): Promise<void> {
+        await this.fetchWithErrorHandling(
+            `${SERVER_API}/delete`, 
+            {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ post })
-            }).then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.text(); // Hoặc response.json() nếu server trả về JSON
-            })
-            .then(data => {
-                console.log("Server Response:", data); // "success"
-                if (data === "success") {
-                    DatabaseService.finishSyncDelete();
-                    alert("Operation succeeded!");
-                }
-            })
-            .catch(error => {
-                console.error("Error:", error);
-            });
-        }
-        catch (error) {
-            console.error("Error deleting post:", error);
-            throw error;
-        }
+                body: JSON.stringify(posts)
+            },
+            () => {
+                DatabaseService.finishSyncDelete();
+                alert("Posts deleted successfully!");
+            }
+        );
     }
-};
+}
 
-export default SyncDbService
+export default SyncDbService;

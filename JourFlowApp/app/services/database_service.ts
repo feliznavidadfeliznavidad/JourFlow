@@ -229,6 +229,11 @@ const DatabaseService = {
 
       const updateDate = new Date().toISOString();
 
+      const currentPostStatus = await this.db.getFirstAsync<{ sync_status: number }  >(
+        `SELECT sync_status FROM posts WHERE id = ?`,
+        [postId]
+      );
+
       const updateFields = [];
       const params = [];
       
@@ -244,7 +249,7 @@ const DatabaseService = {
       params.push(updateDate);
       
       updateFields.push('sync_status = ?');
-      if (currentPostStatus === post_status.synced || currentPostStatus === post_status.new_update) {
+      if (currentPostStatus?.sync_status === post_status.synced || currentPostStatus?.sync_status === post_status.new_update) {
         params.push(post_status.new_update);
       } else {
         params.push(post_status.not_sync);
@@ -342,7 +347,7 @@ const DatabaseService = {
 
   async getDeletePosts(): Promise<Post[]> {
     try {
-      return await this.db.getAllAsync<Post>("SELECT id FROM posts WHERE sync_status = ?", [post_status.deleted]);
+      return await this.db.getAllAsync<Post>("SELECT * FROM posts WHERE sync_status = ?", [post_status.deleted]);
     } catch (error) {
       console.error("Error in getDeletePosts:", error);
       throw error;
