@@ -78,7 +78,7 @@ const DatabaseService = {
   ) {
     try {
       await this.db.execAsync(`
-        INSERT INTO User (username, JWT, ggAccessToken, refreshJWTToken) 
+        INSERT INTO users (username, jwt, google_access_token, refresh_token) 
         VALUES ('${userName}','${jwt}','${ggAccessToken}','${refreshJWTToken}')
       `);
     } catch (error) {

@@ -15,8 +15,12 @@ import * as Google from "expo-auth-session/providers/google";
 import DatabaseService from "../services/database_service";
 import FontLoader from "../services/FontsLoader";
 import { useAuthorization } from "../services/AuthProvider";
-
-import { router } from "expo-router";
+import {
+  getItem as getToken,
+  setItem as setToken,
+  removeItem as removeToken,
+} from "../services/async_storage";
+import { router, usePathname } from "expo-router";
 
 const iosClientId =
   "1007829901637-44pifmkcjpeldf2t5jbcln07vfi7vkm1.apps.googleusercontent.com";
@@ -25,7 +29,19 @@ const LoginScreen = () => {
   const config = {
     iosClientId,
   };
-  const { signIn } = useAuthorization();
+  const { signIn, status } = useAuthorization();
+  useEffect(() => {
+    const initState = async () => {
+      const authToken = await getToken();
+      await removeToken();
+      console.log(
+        "Token retrieved during initialization from login:",
+        authToken
+      );
+    };
+    initState();
+    console.log("status from Login Screen:  ", status);
+  }, [status]);
 
   WebBrowser.maybeCompleteAuthSession();
   const [request, response, promptAsync] = Google.useAuthRequest(config);
@@ -44,11 +60,12 @@ const LoginScreen = () => {
       console.log("response status of posting to server: ", response.status);
       const userIdentity = await response.json();
       console.log("JWT from server: ", userIdentity.token);
-      router.push({
-        pathname: "(homepage)/Feed",
+      await signIn("alo vinh nehihi");
+      await router.replace({
+        pathname: "(homepage)/HomeScreen",
       });
-      router.replace("(homepage)/HomeScreen");
 
+      router.push("(homepage)/HomeScreen");
       DatabaseService.insertDynamicUser(
         userIdentity.userName,
         userIdentity.token,
@@ -64,7 +81,6 @@ const LoginScreen = () => {
       const { authentication } = response;
       const token = authentication?.idToken;
       handleJWT(token);
-      signIn(token);
       console.log("idToken: ", token);
     }
   };
@@ -100,10 +116,9 @@ const LoginScreen = () => {
           <Animated.View style={[styles.googleButtonContainer]}>
             <Pressable
               style={styles.googleButton}
-              onPress={() => {
+              onPress={async () => {
                 console.log("google login");
                 promptAsync();
-                // router.replace("(homepage)/HomeScreen");
               }}
             >
               <Image

@@ -9,7 +9,7 @@ import {
 const AuthContext = React.createContext({
   status: "idle",
   authToken: null,
-  signIn: (token: any) => {},
+  signIn: (token: string) => {},
   signOut: () => {},
 });
 
@@ -26,10 +26,13 @@ export const AuthProvider = (props: any) => {
     status: "idle",
     authToken: null,
   });
+
   React.useEffect(() => {
+    console.log("AuthProvider mounted");
     const initState = async () => {
       try {
         const authToken = await getToken();
+        console.log("Token retrieved during initialization:", authToken);
         if (authToken !== null) {
           dispatch({ type: "SIGN_IN", token: authToken });
         } else {
@@ -40,13 +43,15 @@ export const AuthProvider = (props: any) => {
       }
     };
     initState();
-  }, [state, dispatch]);
+  }, []);
   const actions = React.useMemo(
     () => ({
       signIn: async (token: any) => {
-        dispatch({ type: "SIGN_IN", token });
-        await setToken(token);
+        console.log("signIn function called");
+        await setToken(token); // Save the token first
+        dispatch({ type: "SIGN_IN", token }); // Then update the state
       },
+
       signOut: async () => {
         dispatch({ type: "SIGN_OUT" });
         await removeToken();
@@ -75,5 +80,7 @@ const reducer = (state: any, action: any) => {
         status: "signIn",
         authToken: action.token,
       };
+    default:
+      return state;
   }
 };

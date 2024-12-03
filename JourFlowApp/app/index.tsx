@@ -4,8 +4,9 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as FileSystem from "expo-file-system";
 import FontLoader from "./services/FontsLoader";
-import WelComePage from "./(authentication)/WelcomeScreen";
+import WelComeScreen from "./(authentication)/WelcomeScreen";
 import DatabaseService from "./services/database_service";
+import { AuthProvider } from "./services/AuthProvider";
 
 export default function Page() {
   const checkFolder = async () => {
@@ -32,12 +33,14 @@ export default function Page() {
   }, []);
 
   return (
-    <FontLoader>
-      <SafeAreaView style={styles.safeArea}>
-        <StatusBar style="dark" backgroundColor="#FAF7F0" />
-          <WelComePage />
-      </SafeAreaView>
-    </FontLoader>
+    <AuthProvider>
+      <FontLoader>
+        <SafeAreaView style={styles.safeArea}>
+          <StatusBar style="dark" backgroundColor="#FAF7F0" />
+          <WelComeScreen />
+        </SafeAreaView>
+      </FontLoader>
+    </AuthProvider>
   );
 }
 
@@ -45,9 +48,8 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: "#FAF7F0",
-  }
+  },
 });
 function handleError(error: unknown, arg1: string) {
   throw new Error("Function not implemented.");
 }
-
