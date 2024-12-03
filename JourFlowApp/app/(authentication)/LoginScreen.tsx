@@ -10,11 +10,68 @@ import {
   Dimensions,
 } from "react-native";
 import "../../assets/fonts/Kalamfont/fonts";
+import * as WebBrowser from "expo-web-browser";
+import * as Google from "expo-auth-session/providers/google";
+import DatabaseService from "../services/database_service";
 import FontLoader from "../services/FontsLoader";
+import { useAuthorization } from "../services/AuthProvider";
+
 import { router } from "expo-router";
 
+const iosClientId =
+  "1007829901637-44pifmkcjpeldf2t5jbcln07vfi7vkm1.apps.googleusercontent.com";
 const { width, height } = Dimensions.get("window");
 const LoginScreen = () => {
+  const config = {
+    iosClientId,
+  };
+  const { signIn } = useAuthorization();
+
+  WebBrowser.maybeCompleteAuthSession();
+  const [request, response, promptAsync] = Google.useAuthRequest(config);
+  const handleJWT = async (googleToken: any) => {
+    var response = await fetch("http://localhost:5064/api/auth/google-signin", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-type": "application/json",
+      },
+      body: JSON.stringify({
+        idToken: googleToken,
+      }),
+    });
+    if (response.ok) {
+      console.log("response status of posting to server: ", response.status);
+      const userIdentity = await response.json();
+      console.log("JWT from server: ", userIdentity.token);
+      router.push({
+        pathname: "(homepage)/Feed",
+      });
+      router.replace("(homepage)/HomeScreen");
+
+      DatabaseService.insertDynamicUser(
+        userIdentity.userName,
+        userIdentity.token,
+        googleToken,
+        userIdentity.refreshToken
+      );
+    } else {
+      console.log("something wrong");
+    }
+  };
+  const handleToken = () => {
+    if (response?.type == "success") {
+      const { authentication } = response;
+      const token = authentication?.idToken;
+      handleJWT(token);
+      signIn(token);
+      console.log("idToken: ", token);
+    }
+  };
+  useEffect(() => {
+    handleToken();
+  }, [response]);
+
   return (
     <FontLoader>
       <SafeAreaView style={styles.container}>
@@ -23,7 +80,6 @@ const LoginScreen = () => {
           <Image
             style={styles.welcomeImg}
             source={require("../../assets/images/welcomebackImg.png")}
-
           />
         </View>
         <View style={styles.bottomDescriptionContainer}>
@@ -36,9 +92,7 @@ const LoginScreen = () => {
         </View>
         <View style={styles.buttonArea}>
           <Animated.View style={[styles.skipButtonContainer]}>
-            <Pressable
-              style={styles.skipButton}
-            >
+            <Pressable style={styles.skipButton}>
               <Text style={styles.skipButtonText}>Skip</Text>
             </Pressable>
           </Animated.View>
@@ -48,7 +102,8 @@ const LoginScreen = () => {
               style={styles.googleButton}
               onPress={() => {
                 console.log("google login");
-                router.replace("(homepage)/HomeScreen");
+                promptAsync();
+                // router.replace("(homepage)/HomeScreen");
               }}
             >
               <Image

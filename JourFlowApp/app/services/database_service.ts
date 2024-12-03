@@ -65,6 +65,22 @@ const DatabaseService = {
       throw error;
     }
   },
+  async insertDynamicUser(
+    userName: any,
+    jwt: any,
+    ggAccessToken: any,
+    refreshJWTToken: any
+  ) {
+    try {
+      await this.db.execAsync(`
+        INSERT INTO User (username, JWT, ggAccessToken, refreshJWTToken) 
+        VALUES ('${userName}','${jwt}','${ggAccessToken}','${refreshJWTToken}')
+      `);
+    } catch (error) {
+      console.error("Error inserting user:", error);
+      throw error;
+    }
+  },
 
   async insertFakeUser() {
     try {
@@ -81,7 +97,7 @@ const DatabaseService = {
     }
   },
 
-  async insertUser(user: Omit<User, 'id'>): Promise<number> {
+  async insertUser(user: Omit<User, "id">): Promise<number> {
     try {
       const result = await this.db.runAsync(
         `INSERT INTO users (username, jwt, google_access_token, refresh_token) 
@@ -120,7 +136,14 @@ const DatabaseService = {
     images?: string[];
   }): Promise<number> {
     try {
-      const { title, content, icon_path, user_id, post_date, images = [] } = post;
+      const {
+        title,
+        content,
+        icon_path,
+        user_id,
+        post_date,
+        images = [],
+      } = post;
 
       const postResult = await this.db.runAsync(
         `INSERT INTO posts (user_id, title, icon_path, content, post_date, update_date)
@@ -131,7 +154,9 @@ const DatabaseService = {
       const postId = postResult.lastInsertRowId;
 
       if (images.length > 0) {
-        const imageValues = images.map(url => `(${postId}, '${url}')`).join(',');
+        const imageValues = images
+          .map((url) => `(${postId}, '${url}')`)
+          .join(",");
         await this.db.execAsync(
           `INSERT INTO images (post_id, url) VALUES ${imageValues}`
         );
@@ -147,7 +172,6 @@ const DatabaseService = {
   async getAllImages(): Promise<Image[]> {
     try {
       return await this.db.getAllAsync<Image>("SELECT * FROM images");
-
     } catch (error) {
       console.error("Error fetching data:", error);
       throw error;
@@ -176,9 +200,10 @@ const DatabaseService = {
   },
 
   async getPostsByDate(date: Date): Promise<Post[]> {
-    const formattedDate = date.toISOString().split('T')[0];
+    const formattedDate = date.toISOString().split("T")[0];
     try {
-      const posts = await this.db.getAllAsync<any>(`
+      const posts = await this.db.getAllAsync<any>(
+        `
         SELECT 
           id,
           user_id,
@@ -189,7 +214,9 @@ const DatabaseService = {
           update_date
         FROM posts 
         WHERE DATE(post_date) = ?
-      `, [formattedDate]);
+      `,
+        [formattedDate]
+      );
       return posts;
     } catch (error) {
       console.error("Error fetching posts by date:", error);
@@ -247,30 +274,34 @@ const DatabaseService = {
       // Build update query dynamically based on provided fields
       const updateFields = [];
       const params = [];
-      
+
       if (title !== undefined) {
-        updateFields.push('title = ?');
+        updateFields.push("title = ?");
         params.push(title);
       }
       if (content !== undefined) {
-        updateFields.push('content = ?');
+        updateFields.push("content = ?");
         params.push(content);
       }
-      updateFields.push('update_date = ?');
+      updateFields.push("update_date = ?");
       params.push(updateDate);
-      
+
       if (updateFields.length > 0) {
         params.push(postId);
         await this.db.runAsync(
-          `UPDATE posts SET ${updateFields.join(', ')} WHERE id = ?`,
+          `UPDATE posts SET ${updateFields.join(", ")} WHERE id = ?`,
           params
         );
       }
 
       if (images !== undefined) {
-        await this.db.runAsync('DELETE FROM images WHERE post_id = ?', [postId]);
+        await this.db.runAsync("DELETE FROM images WHERE post_id = ?", [
+          postId,
+        ]);
         if (images.length > 0) {
-          const imageValues = images.map(url => `(${postId}, '${url}')`).join(',');
+          const imageValues = images
+            .map((url) => `(${postId}, '${url}')`)
+            .join(",");
           await this.db.execAsync(
             `INSERT INTO images (post_id, url) VALUES ${imageValues}`
           );
@@ -284,7 +315,7 @@ const DatabaseService = {
 
   async deletePost(postId: number): Promise<void> {
     try {
-      await this.db.runAsync('DELETE FROM posts WHERE id = ?', [postId]);
+      await this.db.runAsync("DELETE FROM posts WHERE id = ?", [postId]);
     } catch (error) {
       console.error("Error in deletePost:", error);
       throw error;
@@ -292,7 +323,7 @@ const DatabaseService = {
   },
 
   async hasPostsOnDate(date: Date): Promise<boolean> {
-    const formattedDate = date.toISOString().split('T')[0];
+    const formattedDate = date.toISOString().split("T")[0];
     try {
       const result = await this.db.getAllAsync<{ count: number }>(
         `SELECT COUNT(*) as count FROM posts WHERE DATE(post_date) = ?`,
@@ -318,7 +349,7 @@ const DatabaseService = {
       console.error("Error clearing database:", error);
       throw error;
     }
-  }
+  },
 };
 
 export default DatabaseService;
