@@ -22,7 +22,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 const { width, height } = Dimensions.get("window");
 
 interface Post {
-  id: number;
+  id: string;
   user_id: number;
   title: string;
   icon_path: IconPath;
@@ -34,7 +34,7 @@ interface Post {
 
 interface Imgs {
   id: number;
-  post_id: number;
+  post_id: string;
   url: string;
 }
 

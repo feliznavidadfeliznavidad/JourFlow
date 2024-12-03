@@ -21,7 +21,7 @@ import { ContentInput } from '../components/ContentEditor';
 import { Footer } from '../components/FooterActions';
 
 interface Post {
-  id: number;
+  id: string;
   user_id: number;
   title: string;
   icon_path: IconPath;
@@ -37,7 +37,7 @@ const Content = () => {
   const [images, setImages] = useState<{ uri: string }[]>([]);
   const [existingPost, setExistingPost] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [currentPostId, setCurrentPostId] = useState<number | null>(null);
+  const [currentPostId, setCurrentPostId] = useState<string | null>(null);
   const [currentIcon, setCurrentIcon] = useState<string>("normal");
 
   const params = useLocalSearchParams<{ icon?: string; formattedDate: string }>();
@@ -50,12 +50,10 @@ const Content = () => {
     try {
       const date = new Date(formattedDate);
       const exists = await DatabaseService.hasPostsOnDate(date); 
-      // const exists = await DatabaseService.existingDateOfPost(date);
   
       if (exists) {
         setExistingPost(true);
         const post = await DatabaseService.getPostsByDate(date)
-        // const post = await DatabaseService.getPostByDate(date);
   
         if (post && post.length > 0) {
           setPostData(post);
@@ -69,7 +67,6 @@ const Content = () => {
           }
   
           const images = await DatabaseService.getPostImages(post[0].id);
-          // const images = await DatabaseService.getImagesByPostId(post[0].id);
           if (images && images.length > 0) {
             const formattedImages = images.map((img) => ({ uri: img.url }));
             setImages(formattedImages);
@@ -99,10 +96,8 @@ const Content = () => {
   
     try {
       const images = await saveImgsToLocalStorage();
-
-      console.log("TEST BY DUY IN DETAIL SCREEN ", images);
-
       const updateData = { title, content, images };
+
       if (currentPostId) {
         await DatabaseService.updatePost(currentPostId, updateData);
 

@@ -3,28 +3,28 @@ import { IconPath } from "../../assets/icon/icon";
 const SERVER_API = 'http://localhost:5004/api/posts'
 
 interface Post {
-    id: number;
-    userId: number;
+    id: string;
+    user_id: number;
     title: string;
-    IconPath: IconPath;
-    Content: string;
-    PostDate: string;
-    UpdateDate: string;
+    icon_path: IconPath;
+    content: string;
+    post_date: string;
+    update_date: string;
   }
-
-interface User {
+  
+  interface User {
     id: number;
-    userName: string;
-    JWT: string;
-    ggAccessToken: string;
-    refreshJWTToken: string;
+    username: string;
+    jwt: string;
+    google_access_token: string;
+    refresh_token: string;
   }
-
-interface IMG {
-  id: number;
-  postId: number;
-  url: string;
-}
+  
+  interface Image {
+    id: number;
+    post_id: string;
+    url: string;
+  }
 
 const SyncDbService = {
     getPosts: async () => {
@@ -69,7 +69,7 @@ const SyncDbService = {
             throw error;
         }
     },
-    deletePost: async (id : number) => {
+    deletePost: async (id : string) => {
         try {
             const response = await fetch(SERVER_API, {
                 method: 'DELETE',

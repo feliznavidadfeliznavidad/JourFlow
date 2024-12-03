@@ -1,4 +1,3 @@
-// components/FontLoader.tsx
 import React, { useState, useEffect, ReactNode } from "react";
 import * as Font from "expo-font";
 import fonts from "../../assets/fonts/Kalamfont/fonts";
