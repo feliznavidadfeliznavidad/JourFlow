@@ -13,8 +13,21 @@ import "../../assets/fonts/Kalamfont/fonts";
 import FontLoader from "../services/FontsLoader";
 import { router } from "expo-router";
 
+// Authentication with Google
+import * as Google from "expo-auth-session/providers/google";
+import * as WebBrowser from "expo-web-browser";
+
 const { width, height } = Dimensions.get("window");
 const LoginScreen = () => {
+  const iosClientId = "1007829901637-f24kgq92iivatote38g4oupoetj27gpl.apps.googleusercontent.com"; 
+  WebBrowser.maybeCompleteAuthSession();
+
+  const config = {
+    iosClientId,
+  };
+  const [request, response, promptAsync] = Google.useAuthRequest(config);
+
+
   return (
     <FontLoader>
       <SafeAreaView style={styles.container}>
@@ -47,7 +60,7 @@ const LoginScreen = () => {
             <Pressable
               style={styles.googleButton}
               onPress={() => {
-                console.log("google login");
+                // promptAsync();;
                 router.replace("(homepage)/HomeScreen");
               }}
             >

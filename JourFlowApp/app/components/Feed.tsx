@@ -14,7 +14,7 @@ import Feather from "@expo/vector-icons/Feather";
 
 
 interface Post {
-  id: number;
+  id: string;
   user_id: number;
   title: string;
   icon_path: IconPath;

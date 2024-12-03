@@ -4,7 +4,7 @@ import DatabaseService from "./database_service";
 const SERVER_API = 'http://localhost:5004/api/posts'
 
 interface Post {
-    id: number;
+    id: string;
     user_id: number;
     title: string;
     icon_path: IconPath;
