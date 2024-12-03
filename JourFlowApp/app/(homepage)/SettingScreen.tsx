@@ -91,8 +91,6 @@ const SettingScreen = () => {
     try {
       await DatabaseService.insertFakePost();
       console.log("Data added successfully!");
-      // Optionally refresh marked dates after insertion
-      // await loadMarkedDates();
     } catch (error) {
       handleError(error, "printing data");
     }
@@ -164,7 +162,12 @@ const SettingScreen = () => {
               <Text style={styles.settingText}>Export</Text>
             </Pressable>
 
-            <Pressable style={styles.settingItem} onPress={() => handlePress()}>
+            <Pressable
+              style={styles.settingItem}
+              onPress={() => {
+                DatabaseService.getUsers();
+              }}
+            >
               <Feather name="lock" size={24} color="black" />
               <Text style={styles.settingText}>Lock Screen</Text>
             </Pressable>

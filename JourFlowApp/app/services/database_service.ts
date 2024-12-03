@@ -81,7 +81,7 @@ const DatabaseService = {
   ) {
     try {
       await this.db.execAsync(`
-        INSERT INTO users (username, jwt, google_access_token, refresh_token) 
+        INSERT INTO users (username, jwt, google_access_token, refresh_token)
         VALUES ('${userName}','${jwt}','${ggAccessToken}','${refreshJWTToken}')
       `);
     } catch (error) {
@@ -118,7 +118,6 @@ const DatabaseService = {
       throw error;
     }
   },
-
   async insertFakePost() {
     try {
       await this.db.execAsync(`
@@ -227,6 +226,7 @@ const DatabaseService = {
       const users = await this.db.getAllAsync<any>(`
         SELECT * FROM users
       `);
+      console.log(users);
       return users;
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -244,6 +244,28 @@ const DatabaseService = {
       return images;
     } catch (error) {
       console.error("Error fetching images by postId:", error);
+      throw error;
+    }
+  },
+  async updateJWT(jwt: any, id: any) {
+    console.log("UPDATE JWTTTTTTTT");
+    try {
+      const user = await this.db.getAllSync<any>(
+        `
+        SELECT * FROM users WHERE id = ?
+      `,
+        [id]
+      );
+
+      if (!user) {
+        throw new Error(`User with ID ${id} not found`);
+      }
+
+      await this.db.execAsync(`
+        UPDATE users SET jwt = '${jwt}' WHERE id = ${id}
+      `);
+    } catch (error) {
+      console.error("Error updating JWT:", error);
       throw error;
     }
   },
