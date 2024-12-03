@@ -50,7 +50,7 @@ const Content = () => {
   const receiveDate = new Date(formattedDate);
   const { status } = useAuthorization();
   useEffect(() => {
-    console.log("From detail screen: ", status);
+    console.log("rom detail screen: ", status);
   }, [status]);
   const checkExists = async () => {
     try {
