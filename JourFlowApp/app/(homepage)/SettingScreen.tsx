@@ -48,10 +48,27 @@ const SettingScreen = () => {
 
   const handleBackup = async () => {
     try {
-      const posts = await DatabaseService.getPosts();
-      const images = await DatabaseService.getAllImages();
-      // SyncDbService.addPost(posts);
-      alert("Backup completed successfully!");
+      const not_sync_posts = await DatabaseService.getNotSyncPosts();
+      console.log(`not_sync_posts.length: ${not_sync_posts.length}`);
+      const new_update_posts = await DatabaseService.getUpdatedPosts();
+      console.log(`new_update_posts.length: ${new_update_posts.length}`);
+      const delete_posts = await DatabaseService.getDeletePosts();
+      console.log(`delete_posts.length: ${delete_posts.length}`);
+
+      if (not_sync_posts.length > 0) {
+        const add_response = await SyncDbService.addPosts(not_sync_posts);
+        console.log(add_response);
+      }
+      if (new_update_posts.length > 0) {
+        const update_response = await SyncDbService.updatePosts(
+          new_update_posts
+        );
+        console.log(update_response);
+      }
+      if (delete_posts.length > 0) {
+        const delete_response = await SyncDbService.deletePosts(delete_posts);
+        console.log(delete_response);
+      }
     } catch (error: any) {
       alert(error.message);
       console.error("Error backing up database:", error);
@@ -60,10 +77,20 @@ const SettingScreen = () => {
 
   const printData = useCallback(async () => {
     try {
-      await DatabaseService.insertFakePost();
       const posts = await DatabaseService.getPosts();
       console.log("Posts:", posts);
 
+      // Optionally refresh marked dates after insertion
+      // await loadMarkedDates();
+    } catch (error) {
+      handleError(error, "printing data");
+    }
+  }, [handleError]);
+
+  const addData = useCallback(async () => {
+    try {
+      await DatabaseService.insertFakePost();
+      console.log("Data added successfully!");
       // Optionally refresh marked dates after insertion
       // await loadMarkedDates();
     } catch (error) {
@@ -164,9 +191,12 @@ const SettingScreen = () => {
 
             <Pressable style={styles.settingItem} onPress={() => printData()}>
               <Feather name="code" size={24} color="black" />
-              <Text style={styles.settingText}>Add + Print Data</Text>
+              <Text style={styles.settingText}> Print Data</Text>
             </Pressable>
-
+            <Pressable style={styles.settingItem} onPress={() => addData()}>
+              <Feather name="code" size={24} color="black" />
+              <Text style={styles.settingText}>Add Data</Text>
+            </Pressable>
             <Pressable
               style={styles.settingItem}
               onPress={() => handleLoadAllImgsPress()}
