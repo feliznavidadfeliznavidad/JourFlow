@@ -1,5 +1,6 @@
 import * as SQLite from "expo-sqlite";
 import { IconPath } from "../../assets/icon/icon";
+import post_status from "../../assets/post_status";
 
 interface Post {
   id: number;
@@ -9,6 +10,7 @@ interface Post {
   content: string;
   post_date: string;
   update_date: string;
+  sync_status: number;
 }
 
 interface User {
@@ -49,6 +51,7 @@ const DatabaseService = {
           content TEXT NOT NULL,
           post_date TEXT NOT NULL,
           update_date TEXT NOT NULL,
+          sync_status INTEGER NOT NULL DEFAULT 0,
           FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
         );
 
@@ -146,7 +149,7 @@ const DatabaseService = {
 
   async getAllImages(): Promise<Image[]> {
     try {
-      return await this.db.getAllAsync<Image>("SELECT * FROM images");
+      return await this.db.getAllAsync<Image>("SELECT * FROM images join posts on images.post_id = posts.id Where posts.sync_status != ?", [post_status.deleted]);
 
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -157,16 +160,8 @@ const DatabaseService = {
   async getPosts(): Promise<Post[]> {
     try {
       const posts = await this.db.getAllAsync<any>(`
-        SELECT 
-          id,
-          user_id,
-          title,
-          icon_path,
-          content,
-          post_date,
-          update_date
-        FROM posts
-      `);
+        SELECT * FROM posts WHERE sync_status != ?
+      `,[post_status.deleted]);
 
       return posts;
     } catch (error) {
@@ -179,17 +174,8 @@ const DatabaseService = {
     const formattedDate = date.toISOString().split('T')[0];
     try {
       const posts = await this.db.getAllAsync<any>(`
-        SELECT 
-          id,
-          user_id,
-          title,
-          icon_path,
-          content,
-          post_date,
-          update_date
-        FROM posts 
-        WHERE DATE(post_date) = ?
-      `, [formattedDate]);
+        SELECT * FROM posts WHERE DATE(post_date) = ? AND sync_status != ?
+      `, [formattedDate, post_status.deleted]);
       return posts;
     } catch (error) {
       console.error("Error fetching posts by date:", error);
@@ -200,13 +186,7 @@ const DatabaseService = {
   async getUsers(): Promise<User[]> {
     try {
       const users = await this.db.getAllAsync<any>(`
-        SELECT 
-          id,
-          username,
-          jwt,
-          google_access_token,
-          refresh_token
-        FROM users
+        SELECT * FROM users
       `);
       return users;
     } catch (error) {
@@ -218,8 +198,8 @@ const DatabaseService = {
   async getPostImages(postId: number): Promise<Image[]> {
     try {
       const images = await this.db.getAllAsync<Image>(
-        `SELECT * FROM images WHERE post_id = ?`,
-        [postId]
+        `SELECT * FROM images join posts on images.post_id = posts.id WHERE post_id = ? AND posts.sync_status != ?`,
+        [postId, post_status.deleted]
       );
       console.log("Images from DB " + JSON.stringify(images));
       return images;
@@ -241,7 +221,7 @@ const DatabaseService = {
       const { title, content, images } = updates;
 
       console.log("TEST BY DUY IN UPDATE POST", images);
-
+      const currentPostStatus = await this.db.getFirstAsync<number>("SELECT sync_status FROM posts WHERE id = ?", (postId));
       const updateDate = new Date().toISOString();
 
       // Build update query dynamically based on provided fields
@@ -259,6 +239,13 @@ const DatabaseService = {
       updateFields.push('update_date = ?');
       params.push(updateDate);
       
+      updateFields.push('sync_status = ?');
+      if (currentPostStatus === post_status.synced || currentPostStatus === post_status.new_update) {
+        params.push(post_status.new_update);
+      } else {
+        params.push(post_status.not_sync);
+      }
+
       if (updateFields.length > 0) {
         params.push(postId);
         await this.db.runAsync(
@@ -282,11 +269,12 @@ const DatabaseService = {
     }
   },
 
-  async deletePost(postId: number): Promise<void> {
+  
+  async softDeletePost(postId: number): Promise<void> {
     try {
-      await this.db.runAsync('DELETE FROM posts WHERE id = ?', [postId]);
+      await this.db.runAsync('UPDATE posts SET sync_status = ? WHERE id = ?', [post_status.deleted, postId]);
     } catch (error) {
-      console.error("Error in deletePost:", error);
+      console.error("Error in softDeletePost:", error);
       throw error;
     }
   },
@@ -295,12 +283,64 @@ const DatabaseService = {
     const formattedDate = date.toISOString().split('T')[0];
     try {
       const result = await this.db.getAllAsync<{ count: number }>(
-        `SELECT COUNT(*) as count FROM posts WHERE DATE(post_date) = ?`,
-        [formattedDate]
+        `SELECT COUNT(*) as count FROM posts WHERE DATE(post_date) = ? AND sync_status != ?`,
+        [formattedDate, post_status.deleted]
       );
       return result[0]?.count > 0;
     } catch (error) {
       console.error("Error checking posts existence:", error);
+      throw error;
+    }
+  },
+
+  async finishSyncUpdate(): Promise<void> {
+    try {
+      await this.db.runAsync('UPDATE posts SET sync_status = ? WHERE sync_status = ?', [post_status.synced, post_status.new_update]);
+    } catch (error) {
+      console.error("Error in finishSync:", error);
+      throw error;
+    }
+  },
+  async finishSyncAdd(): Promise<void> {
+    try {
+      await this.db.runAsync('UPDATE posts SET sync_status = ? WHERE sync_status = ?', [post_status.synced, post_status.not_sync]);
+    } catch (error) {
+      console.error("Error in finishSync:", error);
+      throw error;
+    }
+  },
+  async finishSyncDelete(): Promise<void> {
+    try {
+      await this.db.runAsync('DELETE FROM posts WHERE sync_status != ?', [post_status.deleted]);
+    } catch (error) {
+      console.error("Error in deletePost:", error);
+      throw error;
+    }
+  },
+
+  async getNotSyncPosts(): Promise<Post[]> {
+    try {
+      return await this.db.getAllAsync<Post>("SELECT * FROM posts WHERE sync_status = ? or sync_status = ?", [post_status.not_sync]);
+    } catch (error) {
+      console.error("Error in getNotSyncPosts:", error);
+      throw error;
+    }
+  },
+
+  async getUpdatedPosts(): Promise<Post[]> {
+    try {
+      return await this.db.getAllAsync<Post>("SELECT * FROM posts WHERE sync_status = ?", [post_status.new_update]);
+    } catch (error) {
+      console.error("Error in getNewUpdatePosts:", error);
+      throw error;
+    }
+  },
+
+  async getDeletePosts(): Promise<Post[]> {
+    try {
+      return await this.db.getAllAsync<Post>("SELECT id FROM posts WHERE sync_status = ?", [post_status.deleted]);
+    } catch (error) {
+      console.error("Error in getDeletePosts:", error);
       throw error;
     }
   },

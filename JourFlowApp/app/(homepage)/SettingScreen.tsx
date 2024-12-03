@@ -42,9 +42,15 @@ const SettingScreen = () => {
 
   const handleBackup = async () => {
     try {
-      const posts = await DatabaseService.getPosts();
-      const images = await DatabaseService.getAllImages();
-      // SyncDbService.addPost(posts);
+      const not_sync_posts = await DatabaseService.getNotSyncPosts();
+      const new_update_posts = await DatabaseService.getUpdatedPosts();
+      const delete_posts = await DatabaseService.getDeletePosts();
+
+      const add_response = await SyncDbService.addPost(not_sync_posts);
+      const update_response = await SyncDbService.uppdatePost(new_update_posts);
+      const delete_response = await SyncDbService.deletePost(delete_posts);
+      
+
       alert("Backup completed successfully!");
     } catch (error: any) {
       alert(error.message);

@@ -119,7 +119,7 @@ const Content = () => {
   const handleDelete = async () => {
     try {
       if (currentPostId) {
-        await DatabaseService.deletePost(currentPostId);
+        await DatabaseService.softDeletePost(currentPostId);
         Alert.alert("Success", "Post deleted successfully");
         router.replace("(homepage)/HomeScreen");
       }

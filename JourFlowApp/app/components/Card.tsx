@@ -71,7 +71,7 @@ const Card: React.FC<Post> = (post) => {
     console.log("Deleting post:", post.id);
     try {
       if (post.id) {
-        await DatabaseService.deletePost(post.id);
+        await DatabaseService.softDeletePost(post.id);
         if (post.onDelete) {
           post.onDelete();
         }
