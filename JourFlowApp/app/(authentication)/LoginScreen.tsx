@@ -21,9 +21,10 @@ import {
   removeItem as removeToken,
 } from "../services/async_storage";
 import { router, usePathname } from "expo-router";
+import SyncDbService from "../services/syncDb_service";
 
 const iosClientId =
-  "1007829901637-44pifmkcjpeldf2t5jbcln07vfi7vkm1.apps.googleusercontent.com";
+  "1007829901637-oa4hla8287qmfrr42k272aq2bou7abvm.apps.googleusercontent.com";
 const { width, height } = Dimensions.get("window");
 const LoginScreen = () => {
   const config = {
@@ -46,7 +47,7 @@ const LoginScreen = () => {
   WebBrowser.maybeCompleteAuthSession();
   const [request, response, promptAsync] = Google.useAuthRequest(config);
   const handleJWT = async (googleToken: any) => {
-    var response = await fetch("http://localhost:5064/api/auth/google-signin", {
+    var response = await fetch("http://localhost:5004/api/auth/google-signin", {
       // var response = await fetch(
       //   "http://192.168.2.171:5004/api/auth/google-signin",
       //   {
@@ -81,6 +82,7 @@ const LoginScreen = () => {
         console.log("JWT FROM SERVER IN ELSE CONDITION: ", userIdentity.token);
         DatabaseService.updateJWT(userIdentity.token, 1);
       }
+      await SyncDbService.getPosts();
     } else {
       console.log("something wrong");
     }

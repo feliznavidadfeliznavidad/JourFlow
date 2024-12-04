@@ -55,20 +55,16 @@ const SettingScreen = () => {
       const delete_posts = await DatabaseService.getDeletePosts();
       console.log(`delete_posts.length: ${delete_posts.length}`);
      
-      const add_response = await SyncDbService.getPosts();
-      console.log(add_response);
+      await SyncDbService.getPosts();
 
       if ( not_sync_posts.length > 0){
-        const add_request = await SyncDbService.addPosts(not_sync_posts);
-        console.log(add_request);
+        await SyncDbService.addPosts(not_sync_posts);
       }
       if (new_update_posts.length > 0){
-        const update_request = await SyncDbService.updatePosts(new_update_posts);
-        console.log(update_request);
+        await SyncDbService.updatePosts(new_update_posts);
       }
       if (delete_posts.length > 0){
-        const delete_request = await SyncDbService.deletePosts(delete_posts);
-        console.log(delete_request);
+        await SyncDbService.deletePosts(delete_posts);
       }
     } catch (error: any) {
       alert(error.message);
@@ -80,6 +76,18 @@ const SettingScreen = () => {
     try {
       const posts = await DatabaseService.getPosts();
       console.log("Posts:", posts);
+
+      // Optionally refresh marked dates after insertion
+      // await loadMarkedDates();
+    } catch (error) {
+      handleError(error, "printing data");
+    }
+  }, [handleError]);
+  
+  const printUser = useCallback(async () => {
+    try {
+      const users = await DatabaseService.getUsers();
+      console.log("Users:", users);
 
       // Optionally refresh marked dates after insertion
       // await loadMarkedDates();
@@ -195,7 +203,11 @@ const SettingScreen = () => {
 
             <Pressable style={styles.settingItem} onPress={() => printData()}>
               <Feather name="code" size={24} color="black" />
-              <Text style={styles.settingText}> Print Data</Text>
+              <Text style={styles.settingText}>Print Data</Text>
+            </Pressable>
+            <Pressable style={styles.settingItem} onPress={() => printUser()}>
+              <Feather name="code" size={24} color="black" />
+              <Text style={styles.settingText}>Print User</Text>
             </Pressable>
             <Pressable style={styles.settingItem} onPress={() => addData()}>
               <Feather name="code" size={24} color="black" />
