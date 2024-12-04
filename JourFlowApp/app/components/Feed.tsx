@@ -11,7 +11,7 @@ import Card from "./Card";
 import icons, { IconPath } from "../../assets/icon/icon";
 import DatabaseService from "../services/database_service";
 import Feather from "@expo/vector-icons/Feather";
-
+import { router, usePathname } from "expo-router";
 
 interface Post {
   id: string;
@@ -36,7 +36,9 @@ const Feed = () => {
   };
 
   const handlePressSearch = () => {
-    alert("Comming Soon!");
+    router.push({
+      pathname: "/SearchScreen",
+    });
   };
 
   const handlePostDelete = () => {
@@ -67,7 +69,7 @@ const Feed = () => {
                   content={post.content}
                   post_date={post.post_date}
                   update_date={post.update_date}
-                  onDelete={handlePostDelete} 
+                  onDelete={handlePostDelete}
                 />
               </View>
             );
@@ -82,7 +84,7 @@ export default Feed;
 
 const styles = StyleSheet.create({
   Container: {
-    width: "100%"
+    width: "100%",
   },
   header: {
     padding: 16,

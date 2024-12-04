@@ -1,6 +1,6 @@
 import * as SQLite from "expo-sqlite";
 import { IconPath } from "../../assets/icon/icon";
-import uuid from 'react-native-uuid';
+import uuid from "react-native-uuid";
 import post_status from "../../assets/post_status";
 
 interface Post {
@@ -29,9 +29,8 @@ interface Image {
 }
 
 const randomUUID = () => {
-  return uuid.v4()
-}
-
+  return uuid.v4();
+};
 
 const DatabaseService = {
   db: SQLite.openDatabaseSync("JourFlow"),
@@ -74,6 +73,22 @@ const DatabaseService = {
       throw error;
     }
   },
+  async insertDynamicUser(
+    userName: any,
+    jwt: any,
+    ggAccessToken: any,
+    refreshJWTToken: any
+  ) {
+    try {
+      await this.db.execAsync(`
+        INSERT INTO users (username, jwt, google_access_token, refresh_token)
+        VALUES ('${userName}','${jwt}','${ggAccessToken}','${refreshJWTToken}')
+      `);
+    } catch (error) {
+      console.error("Error inserting user:", error);
+      throw error;
+    }
+  },
 
   async insertFakeUser() {
     try {
@@ -90,7 +105,7 @@ const DatabaseService = {
     }
   },
 
-  async insertUser(user: Omit<User, 'id'>): Promise<number> {
+  async insertUser(user: Omit<User, "id">): Promise<number> {
     try {
       const result = await this.db.runAsync(
         `INSERT INTO users (username, jwt, google_access_token, refresh_token) 
@@ -103,7 +118,6 @@ const DatabaseService = {
       throw error;
     }
   },
-
   async insertFakePost() {
     try {
       await this.db.execAsync(`
@@ -130,7 +144,14 @@ const DatabaseService = {
     images?: string[];
   }): Promise<string> {
     try {
-      const { title, content, icon_path, user_id, post_date, images = [] } = post;
+      const {
+        title,
+        content,
+        icon_path,
+        user_id,
+        post_date,
+        images = [],
+      } = post;
 
       const post_id = randomUUID();
 
@@ -141,7 +162,9 @@ const DatabaseService = {
       );
 
       if (images.length > 0) {
-        const imageValues = images.map(url => `('${post_id}', '${url}')`).join(',');
+        const imageValues = images
+          .map((url) => `('${post_id}', '${url}')`)
+          .join(",");
         await this.db.execAsync(
           `INSERT INTO images (post_id, url) VALUES ${imageValues}`
         );
@@ -156,8 +179,10 @@ const DatabaseService = {
 
   async getAllImages(): Promise<Image[]> {
     try {
-      return await this.db.getAllAsync<Image>("SELECT * FROM images join posts on images.post_id = posts.id Where posts.sync_status != ?", [post_status.deleted]);
-
+      return await this.db.getAllAsync<Image>(
+        "SELECT * FROM images join posts on images.post_id = posts.id Where posts.sync_status != ?",
+        [post_status.deleted]
+      );
     } catch (error) {
       console.error("Error fetching data:", error);
       throw error;
@@ -166,9 +191,12 @@ const DatabaseService = {
 
   async getPosts(): Promise<Post[]> {
     try {
-      const posts = await this.db.getAllAsync<any>(`
+      const posts = await this.db.getAllAsync<any>(
+        `
         SELECT * FROM posts WHERE sync_status != ?
-      `,[post_status.deleted]);
+      `,
+        [post_status.deleted]
+      );
 
       return posts;
     } catch (error) {
@@ -178,11 +206,14 @@ const DatabaseService = {
   },
 
   async getPostsByDate(date: Date): Promise<Post[]> {
-    const formattedDate = date.toISOString().split('T')[0];
+    const formattedDate = date.toISOString().split("T")[0];
     try {
-      const posts = await this.db.getAllAsync<any>(`
+      const posts = await this.db.getAllAsync<any>(
+        `
         SELECT * FROM posts WHERE DATE(post_date) = ? AND sync_status != ?
-      `, [formattedDate, post_status.deleted]);
+      `,
+        [formattedDate, post_status.deleted]
+      );
       return posts;
     } catch (error) {
       console.error("Error fetching posts by date:", error);
@@ -195,6 +226,7 @@ const DatabaseService = {
       const users = await this.db.getAllAsync<any>(`
         SELECT * FROM users
       `);
+      console.log(users);
       return users;
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -215,6 +247,28 @@ const DatabaseService = {
       throw error;
     }
   },
+  async updateJWT(jwt: any, id: any) {
+    console.log("UPDATE JWTTTTTTTT");
+    try {
+      const user = await this.db.getAllSync<any>(
+        `
+        SELECT * FROM users WHERE id = ?
+      `,
+        [id]
+      );
+
+      if (!user) {
+        throw new Error(`User with ID ${id} not found`);
+      }
+
+      await this.db.execAsync(`
+        UPDATE users SET jwt = '${jwt}' WHERE id = ${id}
+      `);
+    } catch (error) {
+      console.error("Error updating JWT:", error);
+      throw error;
+    }
+  },
 
   async updatePost(
     postId: string,
@@ -229,27 +283,29 @@ const DatabaseService = {
 
       const updateDate = new Date().toISOString();
 
-      const currentPostStatus = await this.db.getFirstAsync<{ sync_status: number }  >(
-        `SELECT sync_status FROM posts WHERE id = ?`,
-        [postId]
-      );
+      const currentPostStatus = await this.db.getFirstAsync<{
+        sync_status: number;
+      }>(`SELECT sync_status FROM posts WHERE id = ?`, [postId]);
 
       const updateFields = [];
       const params = [];
-      
+
       if (title !== undefined) {
-        updateFields.push('title = ?');
+        updateFields.push("title = ?");
         params.push(title);
       }
       if (content !== undefined) {
-        updateFields.push('content = ?');
+        updateFields.push("content = ?");
         params.push(content);
       }
-      updateFields.push('update_date = ?');
+      updateFields.push("update_date = ?");
       params.push(updateDate);
-      
-      updateFields.push('sync_status = ?');
-      if (currentPostStatus?.sync_status === post_status.synced || currentPostStatus?.sync_status === post_status.new_update) {
+
+      updateFields.push("sync_status = ?");
+      if (
+        currentPostStatus?.sync_status === post_status.synced ||
+        currentPostStatus?.sync_status === post_status.new_update
+      ) {
         params.push(post_status.new_update);
       } else {
         params.push(post_status.not_sync);
@@ -258,15 +314,19 @@ const DatabaseService = {
       if (updateFields.length > 0) {
         params.push(postId);
         await this.db.runAsync(
-          `UPDATE posts SET ${updateFields.join(', ')} WHERE id = ?`,
+          `UPDATE posts SET ${updateFields.join(", ")} WHERE id = ?`,
           params
         );
       }
 
       if (images !== undefined) {
-        await this.db.runAsync('DELETE FROM images WHERE post_id = ?', [postId]);
+        await this.db.runAsync("DELETE FROM images WHERE post_id = ?", [
+          postId,
+        ]);
         if (images.length > 0) {
-          const imageValues = images.map(url => `('${postId}', '${url}')`).join(',');
+          const imageValues = images
+            .map((url) => `('${postId}', '${url}')`)
+            .join(",");
           await this.db.execAsync(
             `INSERT INTO images (post_id, url) VALUES ${imageValues}`
           );
@@ -278,10 +338,12 @@ const DatabaseService = {
     }
   },
 
-  
   async softDeletePost(postId: string): Promise<void> {
     try {
-      await this.db.runAsync('UPDATE posts SET sync_status = ? WHERE id = ?', [post_status.deleted, postId]);
+      await this.db.runAsync("UPDATE posts SET sync_status = ? WHERE id = ?", [
+        post_status.deleted,
+        postId,
+      ]);
     } catch (error) {
       console.error("Error in softDeletePost:", error);
       throw error;
@@ -289,7 +351,7 @@ const DatabaseService = {
   },
 
   async hasPostsOnDate(date: Date): Promise<boolean> {
-    const formattedDate = date.toISOString().split('T')[0];
+    const formattedDate = date.toISOString().split("T")[0];
     try {
       const result = await this.db.getAllAsync<{ count: number }>(
         `SELECT COUNT(*) as count FROM posts WHERE DATE(post_date) = ? AND sync_status != ?`,
@@ -304,7 +366,10 @@ const DatabaseService = {
 
   async finishSyncUpdate(): Promise<void> {
     try {
-      await this.db.runAsync('UPDATE posts SET sync_status = ? WHERE sync_status = ?', [post_status.synced, post_status.new_update]);
+      await this.db.runAsync(
+        "UPDATE posts SET sync_status = ? WHERE sync_status = ?",
+        [post_status.synced, post_status.new_update]
+      );
     } catch (error) {
       console.error("Error in finishSync:", error);
       throw error;
@@ -312,7 +377,10 @@ const DatabaseService = {
   },
   async finishSyncAdd(): Promise<void> {
     try {
-      await this.db.runAsync('UPDATE posts SET sync_status = ? WHERE sync_status = ?', [post_status.synced, post_status.not_sync]);
+      await this.db.runAsync(
+        "UPDATE posts SET sync_status = ? WHERE sync_status = ?",
+        [post_status.synced, post_status.not_sync]
+      );
     } catch (error) {
       console.error("Error in finishSync:", error);
       throw error;
@@ -320,7 +388,9 @@ const DatabaseService = {
   },
   async finishSyncDelete(): Promise<void> {
     try {
-      await this.db.runAsync('DELETE FROM posts WHERE sync_status != ?', [post_status.deleted]);
+      await this.db.runAsync("DELETE FROM posts WHERE sync_status != ?", [
+        post_status.deleted,
+      ]);
     } catch (error) {
       console.error("Error in deletePost:", error);
       throw error;
@@ -329,7 +399,10 @@ const DatabaseService = {
 
   async getNotSyncPosts(): Promise<Post[]> {
     try {
-      return await this.db.getAllAsync<Post>("SELECT * FROM posts WHERE sync_status = ? or sync_status = ?", [post_status.not_sync]);
+      return await this.db.getAllAsync<Post>(
+        "SELECT * FROM posts WHERE sync_status = ? or sync_status = ?",
+        [post_status.not_sync]
+      );
     } catch (error) {
       console.error("Error in getNotSyncPosts:", error);
       throw error;
@@ -371,7 +444,10 @@ const DatabaseService = {
 
   async getUpdatedPosts(): Promise<Post[]> {
     try {
-      return await this.db.getAllAsync<Post>("SELECT * FROM posts WHERE sync_status = ?", [post_status.new_update]);
+      return await this.db.getAllAsync<Post>(
+        "SELECT * FROM posts WHERE sync_status = ?",
+        [post_status.new_update]
+      );
     } catch (error) {
       console.error("Error in getNewUpdatePosts:", error);
       throw error;
@@ -380,7 +456,10 @@ const DatabaseService = {
 
   async getDeletePosts(): Promise<Post[]> {
     try {
-      return await this.db.getAllAsync<Post>("SELECT * FROM posts WHERE sync_status = ?", [post_status.deleted]);
+      return await this.db.getAllAsync<Post>(
+        "SELECT * FROM posts WHERE sync_status = ?",
+        [post_status.deleted]
+      );
     } catch (error) {
       console.error("Error in getDeletePosts:", error);
       throw error;
@@ -400,7 +479,7 @@ const DatabaseService = {
       console.error("Error clearing database:", error);
       throw error;
     }
-  }
+  },
 };
 
 export default DatabaseService;

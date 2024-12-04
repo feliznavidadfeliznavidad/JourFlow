@@ -5,10 +5,29 @@ import FontLoader from "../services/FontsLoader";
 import CustomCalendar from "../components/Calendar";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import Feed from "../components/Feed";
-
+import { AuthProvider, useAuthorization } from "../services/AuthProvider";
+import { useEffect } from "react";
+import {
+  getItem as getToken,
+  setItem as setToken,
+  removeItem as removeToken,
+} from "../services/async_storage";
 const Tab = createMaterialTopTabNavigator();
 
 export default function Page() {
+  const { status } = useAuthorization();
+  useEffect(() => {
+    const initState = async () => {
+      const authToken = await getToken();
+      console.log(
+        "Token retrieved during initialization from homescreen:",
+        authToken
+      );
+    };
+    initState();
+    console.log("status from homescreen: ", status);
+  }, [status]);
+
   return (
     <FontLoader>
       <SafeAreaView style={styles.safeArea}>

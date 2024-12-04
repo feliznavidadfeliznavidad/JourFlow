@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   Text,
   Image,
@@ -11,12 +11,21 @@ import {
 } from "react-native";
 import FontLoader from "../services/FontsLoader";
 import { router } from "expo-router";
+import { useAuthorization } from "../services/AuthProvider";
 
 const { width, height } = Dimensions.get("window");
 
 const WelComeScreen = () => {
+  const { status } = useAuthorization();
   const scaleAnim = useRef(new Animated.Value(1)).current;
-
+  useEffect(() => {
+    if (status == "signIn") {
+      router.replace({
+        pathname: "(homepage)/HomeScreen",
+      });
+    }
+    console.log("status from welcomePage: ", status);
+  }, [status]);
   const onPressIn = () => {
     Animated.spring(scaleAnim, {
       toValue: 0.9,
