@@ -336,6 +336,39 @@ const DatabaseService = {
     }
   },
 
+  async addSyncPosts(posts: Post[]): Promise<Post[]> {
+    try {
+      posts.forEach(async post => {
+        // Kiểm tra xem post.id có tồn tại trong cơ sở dữ liệu không
+      const existingPost = await this.db.getFirstAsync<Post>(
+        `SELECT id FROM posts WHERE id = ?`,
+        [post.id]
+      );
+
+      // Nếu không tồn tại, thực hiện thêm bài viết
+      if (!existingPost) {
+        await this.db.getAllAsync<Post>(
+          `INSERT INTO posts (id, user_id, title, icon_path, content, post_date, update_date)
+          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [
+            post.id,
+            post.user_id,
+            post.title,
+            post.icon_path,
+            post.content,
+            post.post_date,
+            post.update_date,
+          ]
+        );
+      }
+      });
+      return posts;
+    } catch (error) {
+      console.error("Error in getNewUpdatePosts:", error);
+      throw error;
+    }
+  },
+
   async getUpdatedPosts(): Promise<Post[]> {
     try {
       return await this.db.getAllAsync<Post>("SELECT * FROM posts WHERE sync_status = ?", [post_status.new_update]);

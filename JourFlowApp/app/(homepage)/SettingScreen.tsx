@@ -48,18 +48,21 @@ const SettingScreen = () => {
       console.log(`new_update_posts.length: ${new_update_posts.length}`);
       const delete_posts = await DatabaseService.getDeletePosts();
       console.log(`delete_posts.length: ${delete_posts.length}`);
+     
+      const add_response = await SyncDbService.getPosts();
+      console.log(add_response);
 
       if ( not_sync_posts.length > 0){
-        const add_response = await SyncDbService.addPosts(not_sync_posts);
-        console.log(add_response);
+        const add_request = await SyncDbService.addPosts(not_sync_posts);
+        console.log(add_request);
       }
       if (new_update_posts.length > 0){
-        const update_response = await SyncDbService.updatePosts(new_update_posts);
-        console.log(update_response);
+        const update_request = await SyncDbService.updatePosts(new_update_posts);
+        console.log(update_request);
       }
       if (delete_posts.length > 0){
-        const delete_response = await SyncDbService.deletePosts(delete_posts);
-        console.log(delete_response);
+        const delete_request = await SyncDbService.deletePosts(delete_posts);
+        console.log(delete_request);
       }
     } catch (error: any) {
       alert(error.message);
