@@ -1,5 +1,5 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import FontLoader from "../services/FontsLoader";
 import Feather from "@expo/vector-icons/Feather";
@@ -9,13 +9,19 @@ import { Image } from "react-native";
 import { router } from "expo-router";
 import DatabaseService from "../services/database_service";
 import SyncDbService from "../services/syncDb_service";
+import { useAuthorization } from "../services/AuthProvider";
 
 const SettingScreen = () => {
+  const { status, signOut } = useAuthorization();
   const handlePress = () => {
     alert("Comming Soon!");
   };
+  useEffect(() => {
+    console.log("Status from setting screen: ", status);
+  }, [status]);
 
   const handleSignOutPress = () => {
+    signOut();
     router.navigate("/");
   };
 
@@ -42,24 +48,58 @@ const SettingScreen = () => {
 
   const handleBackup = async () => {
     try {
-      const posts = await DatabaseService.getPosts();
-      const images = await DatabaseService.getAllImages();
-      // SyncDbService.addPost(posts);
-      alert("Backup completed successfully!");
+      const not_sync_posts = await DatabaseService.getNotSyncPosts();
+      console.log(`not_sync_posts.length: ${not_sync_posts.length}`);
+      const new_update_posts = await DatabaseService.getUpdatedPosts();
+      console.log(`new_update_posts.length: ${new_update_posts.length}`);
+      const delete_posts = await DatabaseService.getDeletePosts();
+      console.log(`delete_posts.length: ${delete_posts.length}`);
+     
+      await SyncDbService.getPosts();
+
+      if ( not_sync_posts.length > 0){
+        await SyncDbService.addPosts(not_sync_posts);
+      }
+      if (new_update_posts.length > 0){
+        await SyncDbService.updatePosts(new_update_posts);
+      }
+      if (delete_posts.length > 0){
+        await SyncDbService.deletePosts(delete_posts);
+      }
     } catch (error: any) {
       alert(error.message);
       console.error("Error backing up database:", error);
     }
-  }
-  
+  };
+
   const printData = useCallback(async () => {
     try {
-      await DatabaseService.insertFakePost();
       const posts = await DatabaseService.getPosts();
       console.log("Posts:", posts);
-      
+
       // Optionally refresh marked dates after insertion
       // await loadMarkedDates();
+    } catch (error) {
+      handleError(error, "printing data");
+    }
+  }, [handleError]);
+  
+  const printUser = useCallback(async () => {
+    try {
+      const users = await DatabaseService.getUsers();
+      console.log("Users:", users);
+
+      // Optionally refresh marked dates after insertion
+      // await loadMarkedDates();
+    } catch (error) {
+      handleError(error, "printing data");
+    }
+  }, [handleError]);
+
+  const addData = useCallback(async () => {
+    try {
+      await DatabaseService.insertFakePost();
+      console.log("Data added successfully!");
     } catch (error) {
       handleError(error, "printing data");
     }
@@ -93,102 +133,93 @@ const SettingScreen = () => {
             </Pressable>
           </View>
 
-          <ScrollView 
+          <ScrollView
             style={styles.settingsList}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.settingsListContent}
           >
-              <Pressable
-                style={styles.settingItem}
-                onPress={() => handlePress()}
-              >
-                <Feather name="bell" size={24} color="black" />
-                <Text style={styles.settingText}>Notifications</Text>
-              </Pressable>
+            <Pressable style={styles.settingItem} onPress={() => handlePress()}>
+              <Feather name="bell" size={24} color="black" />
+              <Text style={styles.settingText}>Notifications</Text>
+            </Pressable>
 
-              <Pressable
-                style={styles.settingItem}
-                onPress={() => handlePress()}
-              >
-                <Feather name="type" size={24} color="black" />
-                <Text style={styles.settingText}>Font</Text>
-              </Pressable>
+            <Pressable style={styles.settingItem} onPress={() => handlePress()}>
+              <Feather name="type" size={24} color="black" />
+              <Text style={styles.settingText}>Font</Text>
+            </Pressable>
 
-              <Pressable
-                style={styles.settingItem}
-                onPress={() => handlePress()}
-              >
-                <Feather name="moon" size={24} color="black" />
-                <Text style={styles.settingText}>Dark mode</Text>
-              </Pressable>
+            <Pressable style={styles.settingItem} onPress={() => handlePress()}>
+              <Feather name="moon" size={24} color="black" />
+              <Text style={styles.settingText}>Dark mode</Text>
+            </Pressable>
 
-              <Pressable
-                style={styles.settingItem}
-                onPress={() => handleBackup()}
-              >
-                <Feather name="cloud" size={24} color="black" />
-                <Text style={styles.settingText}>Backup / Restore</Text>
-              </Pressable>
+            <Pressable
+              style={styles.settingItem}
+              onPress={() => handleBackup()}
+            >
+              <Feather name="cloud" size={24} color="black" />
+              <Text style={styles.settingText}>Backup / Restore</Text>
+            </Pressable>
 
-              <Pressable
-                style={styles.settingItem}
-                onPress={() => handlePress()}
-              >
-                <Feather name="globe" size={24} color="black" />
-                <Text style={styles.settingText}>Language</Text>
-              </Pressable>
+            <Pressable style={styles.settingItem} onPress={() => handlePress()}>
+              <Feather name="globe" size={24} color="black" />
+              <Text style={styles.settingText}>Language</Text>
+            </Pressable>
 
-              <Pressable
-                style={styles.settingItem}
-                onPress={() => handlePress()}
-              >
-                <Feather name="download" size={24} color="black" />
-                <Text style={styles.settingText}>Export</Text>
-              </Pressable>
+            <Pressable style={styles.settingItem} onPress={() => handlePress()}>
+              <Feather name="download" size={24} color="black" />
+              <Text style={styles.settingText}>Export</Text>
+            </Pressable>
 
-              <Pressable
-                style={styles.settingItem}
-                onPress={() => handlePress()}
-              >
-                <Feather name="lock" size={24} color="black" />
-                <Text style={styles.settingText}>Lock Screen</Text>
-              </Pressable>
+            <Pressable
+              style={styles.settingItem}
+              onPress={() => {
+                DatabaseService.getUsers();
+              }}
+            >
+              <Feather name="lock" size={24} color="black" />
+              <Text style={styles.settingText}>Lock Screen</Text>
+            </Pressable>
 
-              <Pressable
-                style={styles.settingItem}
-                onPress={() => handleSignOutPress()}
-              >
-                <Feather name="log-out" size={24} color="black" />
-                <Text style={styles.settingText}>Sign out</Text>
-              </Pressable>
+            <Pressable
+              style={styles.settingItem}
+              onPress={() => handleSignOutPress()}
+            >
+              <Feather name="log-out" size={24} color="black" />
+              <Text style={styles.settingText}>Sign out</Text>
+            </Pressable>
 
-              <View>
-                <Text style={styles.textDev}>Developer Tools</Text>
-              </View>
+            <View>
+              <Text style={styles.textDev}>Developer Tools</Text>
+            </View>
 
-              <Pressable
-                style={styles.settingItem}
-                onPress={() => handleDeleteAllPress()}
-              >
-                <Feather name="trash" size={24} color="black" />
-                <Text style={styles.settingText}>Remove All Data</Text>
-              </Pressable>
+            <Pressable
+              style={styles.settingItem}
+              onPress={() => handleDeleteAllPress()}
+            >
+              <Feather name="trash" size={24} color="black" />
+              <Text style={styles.settingText}>Remove All Data</Text>
+            </Pressable>
 
-              <Pressable
-                style={styles.settingItem}
-                onPress={() => printData()}
-              >
-                <Feather name="code" size={24} color="black" />
-                <Text style={styles.settingText}>Add + Print Data</Text>
-              </Pressable>
-              
-              <Pressable
-                style={styles.settingItem}
-                onPress={() => handleLoadAllImgsPress()}
-              >
-                <Feather name="list" size={24} color="black" />
-                <Text style={styles.settingText}>Show All Images</Text>
-              </Pressable>
+            <Pressable style={styles.settingItem} onPress={() => printData()}>
+              <Feather name="code" size={24} color="black" />
+              <Text style={styles.settingText}>Print Data</Text>
+            </Pressable>
+            <Pressable style={styles.settingItem} onPress={() => printUser()}>
+              <Feather name="code" size={24} color="black" />
+              <Text style={styles.settingText}>Print User</Text>
+            </Pressable>
+            <Pressable style={styles.settingItem} onPress={() => addData()}>
+              <Feather name="code" size={24} color="black" />
+              <Text style={styles.settingText}>Add Data</Text>
+            </Pressable>
+            <Pressable
+              style={styles.settingItem}
+              onPress={() => handleLoadAllImgsPress()}
+            >
+              <Feather name="list" size={24} color="black" />
+              <Text style={styles.settingText}>Show All Images</Text>
+            </Pressable>
           </ScrollView>
         </View>
       </SafeAreaView>
@@ -263,7 +294,7 @@ const styles = StyleSheet.create({
     gap: 24,
     paddingLeft: 8,
     paddingRight: 8,
-    paddingBottom: 24, 
+    paddingBottom: 24,
   },
   settingItem: {
     flexDirection: "row",

@@ -1,14 +1,17 @@
 import * as SQLite from "expo-sqlite";
 import { IconPath } from "../../assets/icon/icon";
+import uuid from "react-native-uuid";
+import post_status from "../../assets/post_status";
 
 interface Post {
-  id: number;
+  id: string;
   user_id: number;
   title: string;
   icon_path: IconPath;
   content: string;
   post_date: string;
   update_date: string;
+  sync_status: number;
 }
 
 interface User {
@@ -21,9 +24,13 @@ interface User {
 
 interface Image {
   id: number;
-  post_id: number;
+  post_id: string;
   url: string;
 }
+
+const randomUUID = () => {
+  return uuid.v4();
+};
 
 const DatabaseService = {
   db: SQLite.openDatabaseSync("JourFlow"),
@@ -42,19 +49,20 @@ const DatabaseService = {
         );
         
         CREATE TABLE IF NOT EXISTS posts (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          id TEXT PRIMARY KEY,
           user_id INTEGER,
           title TEXT NOT NULL,
           icon_path TEXT NOT NULL,
           content TEXT NOT NULL,
           post_date TEXT NOT NULL,
           update_date TEXT NOT NULL,
+          sync_status INTEGER NOT NULL DEFAULT 0,
           FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
         );
 
         CREATE TABLE IF NOT EXISTS images (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
-          post_id INTEGER,
+          post_id TEXT,
           url TEXT NULL,
           FOREIGN KEY(post_id) REFERENCES posts(id) ON DELETE CASCADE
         );
@@ -62,6 +70,22 @@ const DatabaseService = {
       console.log("Database initialized successfully");
     } catch (error) {
       console.error("Database initialization error:", error);
+      throw error;
+    }
+  },
+  async insertDynamicUser(
+    userName: any,
+    jwt: any,
+    ggAccessToken: any,
+    refreshJWTToken: any
+  ) {
+    try {
+      await this.db.execAsync(`
+        INSERT INTO users (username, jwt, google_access_token, refresh_token)
+        VALUES ('${userName}','${jwt}','${ggAccessToken}','${refreshJWTToken}')
+      `);
+    } catch (error) {
+      console.error("Error inserting user:", error);
       throw error;
     }
   },
@@ -81,7 +105,7 @@ const DatabaseService = {
     }
   },
 
-  async insertUser(user: Omit<User, 'id'>): Promise<number> {
+  async insertUser(user: Omit<User, "id">): Promise<number> {
     try {
       const result = await this.db.runAsync(
         `INSERT INTO users (username, jwt, google_access_token, refresh_token) 
@@ -94,17 +118,17 @@ const DatabaseService = {
       throw error;
     }
   },
-
   async insertFakePost() {
     try {
       await this.db.execAsync(`
-        INSERT INTO posts (user_id, title, icon_path, content, post_date, update_date) 
+        INSERT INTO posts (id, user_id, title, icon_path, content, post_date, update_date) 
         VALUES 
-          (1, 'Exploring the City', 'angry', 'This post is about the best spots in the city for sightseeing.', '2024-10-10T04:52:54.843Z', '2024-10-10T04:52:54.843Z'),
-          (1, 'Cooking Tips', 'angry', 'A guide to the most common cooking mistakes and how to avoid them.', '2024-10-12T04:52:54.843Z', '2024-10-12T04:52:54.843Z'),
-          (1, 'Tech Trends', 'angry', 'Here are the latest trends in technology you should watch for in 2025.', '2024-11-10T04:52:54.843Z', '2024-11-10T04:52:54.843Z'),
-          (1, 'Travel Essentials', 'angry', 'What to pack when traveling abroad to ensure a smooth trip.', '2024-11-12T04:52:54.843Z', '2024-11-12T04:52:54.843Z')
+          ('${randomUUID()}', 1, 'Exploring the City', 'angry', 'This post is about the best spots in the city for sightseeing.', '2024-10-10T04:52:54.843Z', '2024-10-10T04:52:54.843Z'),
+          ('${randomUUID()}', 1, 'Cooking Tips', 'angry', 'A guide to the most common cooking mistakes and how to avoid them.', '2024-10-12T04:52:54.843Z', '2024-10-12T04:52:54.843Z'),
+          ('${randomUUID()}', 1, 'Tech Trends', 'angry', 'Here are the latest trends in technology you should watch for in 2025.', '2024-11-10T04:52:54.843Z', '2024-11-10T04:52:54.843Z'),
+          ('${randomUUID()}', 1, 'Travel Essentials', 'angry', 'What to pack when traveling abroad to ensure a smooth trip.', '2024-11-12T04:52:54.843Z', '2024-11-12T04:52:54.843Z')
       `);
+      console.log("Fake posts inserted successfully");
     } catch (error) {
       console.error("Error inserting post:", error);
       throw error;
@@ -118,26 +142,35 @@ const DatabaseService = {
     user_id: number;
     post_date: string;
     images?: string[];
-  }): Promise<number> {
+  }): Promise<string> {
     try {
-      const { title, content, icon_path, user_id, post_date, images = [] } = post;
+      const {
+        title,
+        content,
+        icon_path,
+        user_id,
+        post_date,
+        images = [],
+      } = post;
 
-      const postResult = await this.db.runAsync(
-        `INSERT INTO posts (user_id, title, icon_path, content, post_date, update_date)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [user_id, title, icon_path, content, post_date, post_date]
+      const post_id = randomUUID();
+
+      await this.db.runAsync(
+        `INSERT INTO posts (id, user_id, title, icon_path, content, post_date, update_date)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [post_id, user_id, title, icon_path, content, post_date, post_date]
       );
 
-      const postId = postResult.lastInsertRowId;
-
       if (images.length > 0) {
-        const imageValues = images.map(url => `(${postId}, '${url}')`).join(',');
+        const imageValues = images
+          .map((url) => `('${post_id}', '${url}')`)
+          .join(",");
         await this.db.execAsync(
           `INSERT INTO images (post_id, url) VALUES ${imageValues}`
         );
       }
 
-      return postId;
+      return post_id;
     } catch (error) {
       console.error("Error in createPost:", error);
       throw error;
@@ -146,8 +179,10 @@ const DatabaseService = {
 
   async getAllImages(): Promise<Image[]> {
     try {
-      return await this.db.getAllAsync<Image>("SELECT * FROM images");
-
+      return await this.db.getAllAsync<Image>(
+        "SELECT * FROM images join posts on images.post_id = posts.id Where posts.sync_status != ?",
+        [post_status.deleted]
+      );
     } catch (error) {
       console.error("Error fetching data:", error);
       throw error;
@@ -156,17 +191,12 @@ const DatabaseService = {
 
   async getPosts(): Promise<Post[]> {
     try {
-      const posts = await this.db.getAllAsync<any>(`
-        SELECT 
-          id,
-          user_id,
-          title,
-          icon_path,
-          content,
-          post_date,
-          update_date
-        FROM posts
-      `);
+      const posts = await this.db.getAllAsync<any>(
+        `
+        SELECT * FROM posts WHERE sync_status != ?
+      `,
+        [post_status.deleted]
+      );
 
       return posts;
     } catch (error) {
@@ -176,20 +206,14 @@ const DatabaseService = {
   },
 
   async getPostsByDate(date: Date): Promise<Post[]> {
-    const formattedDate = date.toISOString().split('T')[0];
+    const formattedDate = date.toISOString().split("T")[0];
     try {
-      const posts = await this.db.getAllAsync<any>(`
-        SELECT 
-          id,
-          user_id,
-          title,
-          icon_path,
-          content,
-          post_date,
-          update_date
-        FROM posts 
-        WHERE DATE(post_date) = ?
-      `, [formattedDate]);
+      const posts = await this.db.getAllAsync<any>(
+        `
+        SELECT * FROM posts WHERE DATE(post_date) = ? AND sync_status != ?
+      `,
+        [formattedDate, post_status.deleted]
+      );
       return posts;
     } catch (error) {
       console.error("Error fetching posts by date:", error);
@@ -200,13 +224,7 @@ const DatabaseService = {
   async getUsers(): Promise<User[]> {
     try {
       const users = await this.db.getAllAsync<any>(`
-        SELECT 
-          id,
-          username,
-          jwt,
-          google_access_token,
-          refresh_token
-        FROM users
+        SELECT * FROM users
       `);
       return users;
     } catch (error) {
@@ -215,11 +233,11 @@ const DatabaseService = {
     }
   },
 
-  async getPostImages(postId: number): Promise<Image[]> {
+  async getPostImages(postId: string): Promise<Image[]> {
     try {
       const images = await this.db.getAllAsync<Image>(
-        `SELECT * FROM images WHERE post_id = ?`,
-        [postId]
+        `SELECT * FROM images join posts on images.post_id = posts.id WHERE post_id = ? AND posts.sync_status != ?`,
+        [postId, post_status.deleted]
       );
       console.log("Images from DB " + JSON.stringify(images));
       return images;
@@ -228,9 +246,31 @@ const DatabaseService = {
       throw error;
     }
   },
+  async updateJWT(jwt: any, id: any) {
+    console.log("UPDATE JWTTTTTTTT");
+    try {
+      const user = await this.db.getAllSync<any>(
+        `
+        SELECT * FROM users WHERE id = ?
+      `,
+        [id]
+      );
+
+      if (!user) {
+        throw new Error(`User with ID ${id} not found`);
+      }
+
+      await this.db.execAsync(`
+        UPDATE users SET jwt = '${jwt}' WHERE id = ${id}
+      `);
+    } catch (error) {
+      console.error("Error updating JWT:", error);
+      throw error;
+    }
+  },
 
   async updatePost(
-    postId: number,
+    postId: string,
     updates: {
       title?: string;
       content?: string;
@@ -240,37 +280,52 @@ const DatabaseService = {
     try {
       const { title, content, images } = updates;
 
-      console.log("TEST BY DUY IN UPDATE POST", images);
-
       const updateDate = new Date().toISOString();
 
-      // Build update query dynamically based on provided fields
+      const currentPostStatus = await this.db.getFirstAsync<{
+        sync_status: number;
+      }>(`SELECT sync_status FROM posts WHERE id = ?`, [postId]);
+
       const updateFields = [];
       const params = [];
-      
+
       if (title !== undefined) {
-        updateFields.push('title = ?');
+        updateFields.push("title = ?");
         params.push(title);
       }
       if (content !== undefined) {
-        updateFields.push('content = ?');
+        updateFields.push("content = ?");
         params.push(content);
       }
-      updateFields.push('update_date = ?');
+      updateFields.push("update_date = ?");
       params.push(updateDate);
-      
+
+      updateFields.push("sync_status = ?");
+      if (
+        currentPostStatus?.sync_status === post_status.synced ||
+        currentPostStatus?.sync_status === post_status.new_update
+      ) {
+        params.push(post_status.new_update);
+      } else {
+        params.push(post_status.not_sync);
+      }
+
       if (updateFields.length > 0) {
         params.push(postId);
         await this.db.runAsync(
-          `UPDATE posts SET ${updateFields.join(', ')} WHERE id = ?`,
+          `UPDATE posts SET ${updateFields.join(", ")} WHERE id = ?`,
           params
         );
       }
 
       if (images !== undefined) {
-        await this.db.runAsync('DELETE FROM images WHERE post_id = ?', [postId]);
+        await this.db.runAsync("DELETE FROM images WHERE post_id = ?", [
+          postId,
+        ]);
         if (images.length > 0) {
-          const imageValues = images.map(url => `(${postId}, '${url}')`).join(',');
+          const imageValues = images
+            .map((url) => `('${postId}', '${url}')`)
+            .join(",");
           await this.db.execAsync(
             `INSERT INTO images (post_id, url) VALUES ${imageValues}`
           );
@@ -282,25 +337,127 @@ const DatabaseService = {
     }
   },
 
-  async deletePost(postId: number): Promise<void> {
+  async softDeletePost(postId: string): Promise<void> {
     try {
-      await this.db.runAsync('DELETE FROM posts WHERE id = ?', [postId]);
+      await this.db.runAsync("UPDATE posts SET sync_status = ? WHERE id = ?", [
+        post_status.deleted,
+        postId,
+      ]);
+    } catch (error) {
+      console.error("Error in softDeletePost:", error);
+      throw error;
+    }
+  },
+
+  async hasPostsOnDate(date: Date): Promise<boolean> {
+    const formattedDate = date.toISOString().split("T")[0];
+    try {
+      const result = await this.db.getAllAsync<{ count: number }>(
+        `SELECT COUNT(*) as count FROM posts WHERE DATE(post_date) = ? AND sync_status != ?`,
+        [formattedDate, post_status.deleted]
+      );
+      return result[0]?.count > 0;
+    } catch (error) {
+      console.error("Error checking posts existence:", error);
+      throw error;
+    }
+  },
+
+  async finishSyncUpdate(): Promise<void> {
+    try {
+      await this.db.runAsync(
+        "UPDATE posts SET sync_status = ? WHERE sync_status = ?",
+        [post_status.synced, post_status.new_update]
+      );
+    } catch (error) {
+      console.error("Error in finishSync:", error);
+      throw error;
+    }
+  },
+  async finishSyncAdd(): Promise<void> {
+    try {
+      await this.db.runAsync(
+        "UPDATE posts SET sync_status = ? WHERE sync_status = ?",
+        [post_status.synced, post_status.not_sync]
+      );
+    } catch (error) {
+      console.error("Error in finishSync:", error);
+      throw error;
+    }
+  },
+  async finishSyncDelete(): Promise<void> {
+    try {
+      await this.db.runAsync("DELETE FROM posts WHERE sync_status != ?", [
+        post_status.deleted,
+      ]);
     } catch (error) {
       console.error("Error in deletePost:", error);
       throw error;
     }
   },
 
-  async hasPostsOnDate(date: Date): Promise<boolean> {
-    const formattedDate = date.toISOString().split('T')[0];
+  async getNotSyncPosts(): Promise<Post[]> {
     try {
-      const result = await this.db.getAllAsync<{ count: number }>(
-        `SELECT COUNT(*) as count FROM posts WHERE DATE(post_date) = ?`,
-        [formattedDate]
+      return await this.db.getAllAsync<Post>(
+        "SELECT * FROM posts WHERE sync_status = ? or sync_status = ?",
+        [post_status.not_sync]
       );
-      return result[0]?.count > 0;
     } catch (error) {
-      console.error("Error checking posts existence:", error);
+      console.error("Error in getNotSyncPosts:", error);
+      throw error;
+    }
+  },
+
+  async addSyncPosts(posts: Post[]): Promise<void> {
+    try {
+      posts.forEach(async post => {
+        // Kiểm tra xem post.id có tồn tại trong cơ sở dữ liệu không
+      const existingPost = await this.db.getFirstAsync<string>(
+        `SELECT id FROM posts WHERE id = ?`,
+        [post.id]
+      );
+      
+      if (!existingPost ) {
+        console.log("Adding post");
+        await this.db.runAsync(
+          `INSERT INTO posts (id, user_id, title, icon_path, content, post_date, update_date)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [post.id, post.user_id, post.title, post.icon_path, post.content, post.post_date, post.post_date]
+        );
+        console.log("Post added successfully");
+      }
+      else
+      {
+        console.log("Posts already exists");
+      }
+
+    });
+    } catch (error) {
+      console.error("Error in getNewUpdatePosts:", error);
+      throw error;
+    }
+  },
+
+  async getUpdatedPosts(): Promise<Post[]> {
+    try {
+      return await this.db.getAllAsync<Post>(
+        "SELECT id, sync_status, title, content, icon_path, update_date FROM posts WHERE sync_status = ?",
+        [post_status.new_update]
+      );
+    } catch (error) {
+      console.error("Error in getNewUpdatePosts:", error);
+      throw error;
+    }
+  },
+
+  async getDeletePosts(): Promise<Post[]> {
+    try {
+      return await this.db.getAllAsync<Post>(
+        "SELECT id, sync_status FROM posts WHERE sync_status = ?",
+        [post_status.deleted]
+      );
+    } catch (error) {
+      console.error("Error in getDeletePosts:", error);
       throw error;
     }
   },
@@ -318,7 +475,7 @@ const DatabaseService = {
       console.error("Error clearing database:", error);
       throw error;
     }
-  }
+  },
 };
 
 export default DatabaseService;

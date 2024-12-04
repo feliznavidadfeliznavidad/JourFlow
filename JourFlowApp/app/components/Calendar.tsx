@@ -1,14 +1,14 @@
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { Calendar, DateData } from "react-native-calendars";
 import { Theme } from "react-native-calendars/src/types";
-import { 
-  Dimensions, 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Pressable, 
-  Alert 
+import {
+  Dimensions,
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Pressable,
+  Alert,
 } from "react-native";
 import LottieView from "lottie-react-native";
 import AntDesign from "@expo/vector-icons/AntDesign";
@@ -17,7 +17,6 @@ import { format, isAfter, isBefore, parseISO } from "date-fns";
 import DatabaseService from "../services/database_service";
 import colors from "../../assets/colors/colors";
 import icons, { IconPath } from "../../assets/icon/icon";
-
 // Enhanced type definitions with improved type safety
 interface Post {
   post_date: string;
@@ -62,7 +61,7 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        await DatabaseService.insertFakeUser(); // Insert clone user data for testing
+        // await DatabaseService.insertFakeUser(); // Insert clone user data for testing
         await loadMarkedDates();
         await checkTodayEntry();
       } catch (error) {
@@ -74,68 +73,73 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
   }, [reloadKey]);
 
   // Custom day component with improved rendering and interaction
-  const DayComponent: React.FC<DayComponentProps> = React.memo(({ date, marking }) => {
-    const currentDate = new Date(date.timestamp);
-    
-    // Memoized styling based on date properties
-    const dayStyles = useMemo(() => {
-      const isWeekend = currentDate.getDay() === 0 || currentDate.getDay() === 6;
-      const isFutureDate = isAfter(currentDate, today);
+  const DayComponent: React.FC<DayComponentProps> = React.memo(
+    ({ date, marking }) => {
+      const currentDate = new Date(date.timestamp);
 
-      return {
-        textColor: isWeekend 
-          ? (currentDate.getDay() === 6 ? colors.saturday : colors.sunday)
-          : colors.textInLight,
-        opacity: isFutureDate ? 0.3 : 1,
-      };
-    }, [currentDate, today]);
+      // Memoized styling based on date properties
+      const dayStyles = useMemo(() => {
+        const isWeekend =
+          currentDate.getDay() === 0 || currentDate.getDay() === 6;
+        const isFutureDate = isAfter(currentDate, today);
 
-    // Render dots with memoization
-    const renderDots = useCallback(() => {
-      if (!marking?.dot) return null;
+        return {
+          textColor: isWeekend
+            ? currentDate.getDay() === 6
+              ? colors.saturday
+              : colors.sunday
+            : colors.textInLight,
+          opacity: isFutureDate ? 0.3 : 1,
+        };
+      }, [currentDate, today]);
 
-      const dots = Array.isArray(marking.dot) ? marking.dot : [marking.dot];
+      // Render dots with memoization
+      const renderDots = useCallback(() => {
+        if (!marking?.dot) return null;
+
+        const dots = Array.isArray(marking.dot) ? marking.dot : [marking.dot];
+
+        return (
+          <View style={styles.lottieContainer}>
+            {dots.map((dot, index) => (
+              <LottieView
+                key={`${date.dateString}-${index}`}
+                source={dot.lottieFile}
+                autoPlay
+                loop
+                style={styles.lottieDot}
+              />
+            ))}
+          </View>
+        );
+      }, [marking?.dot, date.dateString]);
 
       return (
-        <View style={styles.lottieContainer}>
-          {dots.map((dot, index) => (
-            <LottieView
-              key={`${date.dateString}-${index}`}
-              source={dot.lottieFile}
-              autoPlay
-              loop
-              style={styles.lottieDot}
-            />
-          ))}
-        </View>
+        <TouchableOpacity
+          style={styles.dayContainer}
+          onPress={() => handleDayPress(currentDate)}
+        >
+          <View style={styles.dayContent}>
+            {marking?.dot ? (
+              renderDots()
+            ) : (
+              <Text
+                style={[
+                  styles.dayText,
+                  {
+                    color: dayStyles.textColor,
+                    opacity: dayStyles.opacity,
+                  },
+                ]}
+              >
+                {date.day}
+              </Text>
+            )}
+          </View>
+        </TouchableOpacity>
       );
-    }, [marking?.dot, date.dateString]);
-
-    return (
-      <TouchableOpacity
-        style={styles.dayContainer}
-        onPress={() => handleDayPress(currentDate)}
-      >
-        <View style={styles.dayContent}>
-          {marking?.dot ? (
-            renderDots()
-          ) : (
-            <Text 
-              style={[
-                styles.dayText, 
-                { 
-                  color: dayStyles.textColor, 
-                  opacity: dayStyles.opacity 
-                }
-              ]}
-            >
-              {date.day}
-            </Text>
-          )}
-        </View>
-      </TouchableOpacity>
-    );
-  });
+    }
+  );
 
   // Load marked dates from database
   const loadMarkedDates = useCallback(async () => {
@@ -143,17 +147,20 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
       const posts: Post[] = await DatabaseService.getPosts();
       const newMarkedDates: MarkedDates = {};
 
-      posts.forEach(post => {
+      posts.forEach((post) => {
         if (post) {
           try {
-            const formattedDate = format(parseISO(post.post_date), "yyyy-MM-dd");
+            const formattedDate = format(
+              parseISO(post.post_date),
+              "yyyy-MM-dd"
+            );
             newMarkedDates[formattedDate] = {
               marked: true,
               post_date: new Date(post.post_date),
               update_date: new Date(post.update_date),
               dot: {
                 lottieFile: icons[post.icon_path],
-              }
+              },
             };
           } catch (error) {
             handleError(error, "parsing post date");
@@ -168,39 +175,42 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
   }, [handleError]);
 
   // Handle day press with comprehensive logic
-  const handleDayPress = useCallback((postDate: Date) => {
-    // Prevent future date selection
-    if (isAfter(postDate, today)) {
-      Alert.alert("Error", "Please select a date before today");
-      return;
-    }
+  const handleDayPress = useCallback(
+    (postDate: Date) => {
+      // Prevent future date selection
+      if (isAfter(postDate, today)) {
+        Alert.alert("Error", "Please select a date before today");
+        return;
+      }
 
-    const formattedDate = postDate.toISOString();
-    
-    DatabaseService.hasPostsOnDate(postDate)
-    // DatabaseService.existingDateOfPost(postDate)
-      .then((exists) => {
-        if (exists) {
-          // Navigate to detail screen if post already exists
-          router.push({
-            pathname: "DetailScreen",
-            params: { formattedDate },
-          });
-        } else {
-          // Navigate to feeling selection for new entries
-          router.push({
-            pathname: "PickFeelingScreen",
-            params: { formattedDate },
-          });
-        }
-      })
-      .catch((error) => handleError(error, "checking existing date"));
-  }, [today, handleError]);
+      const formattedDate = postDate.toISOString();
+
+      DatabaseService.hasPostsOnDate(postDate)
+        // DatabaseService.existingDateOfPost(postDate)
+        .then((exists) => {
+          if (exists) {
+            // Navigate to detail screen if post already exists
+            router.push({
+              pathname: "DetailScreen",
+              params: { formattedDate },
+            });
+          } else {
+            // Navigate to feeling selection for new entries
+            router.push({
+              pathname: "PickFeelingScreen",
+              params: { formattedDate },
+            });
+          }
+        })
+        .catch((error) => handleError(error, "checking existing date"));
+    },
+    [today, handleError]
+  );
 
   // Check if today's entry exists
   const checkTodayEntry = useCallback(async () => {
     try {
-      const exists = await DatabaseService.hasPostsOnDate(today)
+      const exists = await DatabaseService.hasPostsOnDate(today);
       // const exists = await DatabaseService.existingDateOfPost(today);
       setIsToday(!exists);
     } catch (error) {
@@ -209,16 +219,19 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
   }, [today, handleError]);
 
   // Calendar theme with consistent styling
-  const calendarTheme: Theme = useMemo(() => ({
-    textMonthFontFamily: "kalam",
-    textDayHeaderFontFamily: "kalam",
-    calendarBackground: colors.backgroundLight,
-    textSectionTitleColor: colors.textInLight,
-    textDayHeaderFontSize: 14,
-    textDayFontSize: 14,
-    textMonthFontSize: 32,
-    dayTextColor: colors.textInLight,
-  }), []);
+  const calendarTheme: Theme = useMemo(
+    () => ({
+      textMonthFontFamily: "kalam",
+      textDayHeaderFontFamily: "kalam",
+      calendarBackground: colors.backgroundLight,
+      textSectionTitleColor: colors.textInLight,
+      textDayHeaderFontSize: 14,
+      textDayFontSize: 14,
+      textMonthFontSize: 32,
+      dayTextColor: colors.textInLight,
+    }),
+    []
+  );
 
   // Navigation to settings
   const handleSettingPress = useCallback(() => {
@@ -231,7 +244,7 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
       await DatabaseService.insertFakePost();
       const posts = await DatabaseService.getPosts();
       console.log("Posts:", posts);
-      
+
       // Optionally refresh marked dates after insertion
       await loadMarkedDates();
     } catch (error) {
@@ -252,12 +265,16 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
       <View style={styles.calendar}>
         <Calendar
           theme={calendarTheme}
-          initialDate= {today.toISOString().slice(0, 10)}
-          onDayPress={(day: DateData) => handleDayPress(new Date(day.timestamp))}
+          initialDate={today.toISOString().slice(0, 10)}
+          onDayPress={(day: DateData) =>
+            handleDayPress(new Date(day.timestamp))
+          }
           firstDay={0}
           hideExtraDays={true}
           markedDates={markedDates}
-          dayComponent={(props : DayComponentProps) => <DayComponent {...props} />}
+          dayComponent={(props: DayComponentProps) => (
+            <DayComponent {...props} />
+          )}
         />
       </View>
 
@@ -272,10 +289,7 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
       {/* Submit Button for Today's Entry */}
       <View style={styles.submitContainer}>
         <TouchableOpacity
-          style={[
-            styles.submitButton, 
-            { opacity: isToday ? 1 : 0.2 }
-          ]}
+          style={[styles.submitButton, { opacity: isToday ? 1 : 0.2 }]}
           onPress={() => handleDayPress(today)}
           disabled={!isToday}
         >
@@ -293,13 +307,13 @@ const { width } = Dimensions.get("window");
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#FAF7F0"
+    backgroundColor: "#FAF7F0",
   },
   header: {
     padding: 16,
     justifyContent: "center",
     alignItems: "flex-end",
-    marginRight: 10
+    marginRight: 10,
   },
   calendar: {
     padding: 10,

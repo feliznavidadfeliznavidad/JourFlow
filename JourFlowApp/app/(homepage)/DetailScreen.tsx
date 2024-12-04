@@ -15,13 +15,13 @@ import * as ImagePicker from "expo-image-picker";
 import icons, { IconPath } from "../../assets/icon/icon";
 import * as FileSystem from "expo-file-system";
 import DatabaseService from "../services/database_service";
-import { Header } from '../components/HeaderDetail';
-import { ImageList } from '../components/ImageList';
-import { ContentInput } from '../components/ContentEditor';
-import { Footer } from '../components/FooterActions';
-
+import { Header } from "../components/HeaderDetail";
+import { ImageList } from "../components/ImageList";
+import { ContentInput } from "../components/ContentEditor";
+import { Footer } from "../components/FooterActions";
+import { useAuthorization } from "../services/AuthProvider";
 interface Post {
-  id: number;
+  id: string;
   user_id: number;
   title: string;
   icon_path: IconPath;
@@ -37,26 +37,30 @@ const Content = () => {
   const [images, setImages] = useState<{ uri: string }[]>([]);
   const [existingPost, setExistingPost] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [currentPostId, setCurrentPostId] = useState<number | null>(null);
+  const [currentPostId, setCurrentPostId] = useState<string | null>(null);
   const [currentIcon, setCurrentIcon] = useState<string>("normal");
 
-  const params = useLocalSearchParams<{ icon?: string; formattedDate: string }>();
+  const params = useLocalSearchParams<{
+    icon?: string;
+    formattedDate: string;
+  }>();
   const formattedDate = params.formattedDate;
   const iconFromParams = params.icon;
 
   const receiveDate = new Date(formattedDate);
-
+  const { status } = useAuthorization();
+  useEffect(() => {
+    console.log("rom detail screen: ", status);
+  }, [status]);
   const checkExists = async () => {
     try {
       const date = new Date(formattedDate);
-      const exists = await DatabaseService.hasPostsOnDate(date); 
-      // const exists = await DatabaseService.existingDateOfPost(date);
-  
+      const exists = await DatabaseService.hasPostsOnDate(date);
+
       if (exists) {
         setExistingPost(true);
-        const post = await DatabaseService.getPostsByDate(date)
-        // const post = await DatabaseService.getPostByDate(date);
-  
+        const post = await DatabaseService.getPostsByDate(date);
+
         if (post && post.length > 0) {
           setPostData(post);
           setTitle(post[0].title);
@@ -67,9 +71,8 @@ const Content = () => {
           } else {
             setCurrentIcon(iconFromParams);
           }
-  
+
           const images = await DatabaseService.getPostImages(post[0].id);
-          // const images = await DatabaseService.getImagesByPostId(post[0].id);
           if (images && images.length > 0) {
             const formattedImages = images.map((img) => ({ uri: img.url }));
             setImages(formattedImages);
@@ -96,30 +99,28 @@ const Content = () => {
       Alert.alert("Error", "Please enter a title or content");
       return;
     }
-  
+
     try {
       const images = await saveImgsToLocalStorage();
-
-      console.log("TEST BY DUY IN DETAIL SCREEN ", images);
-
       const updateData = { title, content, images };
+
       if (currentPostId) {
         await DatabaseService.updatePost(currentPostId, updateData);
 
         setIsEditing(false);
         Alert.alert("Success", "Post updated successfully");
-        await checkExists(); 
+        await checkExists();
       }
     } catch (error) {
       console.error("Error in handleUpdate: ", error);
       Alert.alert("Error", "Failed to update post. Please try again.");
     }
   };
-  
+
   const handleDelete = async () => {
     try {
       if (currentPostId) {
-        await DatabaseService.deletePost(currentPostId);
+        await DatabaseService.softDeletePost(currentPostId);
         Alert.alert("Success", "Post deleted successfully");
         router.replace("(homepage)/HomeScreen");
       }
@@ -138,16 +139,18 @@ const Content = () => {
         aspect: [1, 1],
         quality: 1,
       });
-  
+
       if (!result.canceled) {
-        const selectedImages = result.assets.map((asset) => ({ uri: asset.uri }));
-        setImages(prevImages => [...prevImages, ...selectedImages]);
+        const selectedImages = result.assets.map((asset) => ({
+          uri: asset.uri,
+        }));
+        setImages((prevImages) => [...prevImages, ...selectedImages]);
       }
     } catch (error) {
       console.error("Error picking image:", error);
     }
   };
-  
+
   // Hàm lưu ảnh vào bộ nhớ
   const saveImgsToLocalStorage = async () => {
     if (images.length === 0) return [];
@@ -174,17 +177,24 @@ const Content = () => {
       Alert.alert("Please enter a title or content");
       return;
     }
-  
+
     try {
       const savedImgPaths = await saveImgsToLocalStorage();
       const user_id = 1;
 
       const post_date = receiveDate.toISOString();
-      
-      const postData = {title, content, icon_path: currentIcon, user_id, post_date, images: savedImgPaths};
+
+      const postData = {
+        title,
+        content,
+        icon_path: currentIcon,
+        user_id,
+        post_date,
+        images: savedImgPaths,
+      };
 
       await DatabaseService.createPost(postData);
-  
+
       setImages([]);
       setTitle("");
       setContent("");
@@ -196,7 +206,7 @@ const Content = () => {
   };
 
   useEffect(() => {
-    checkExists();;
+    checkExists();
   }, []);
 
   return (
@@ -223,7 +233,7 @@ const Content = () => {
                 isReadOnly={existingPost && !isEditing}
               />
             </ScrollView>
-            <Footer 
+            <Footer
               onImagePick={pickImage}
               onSubmit={handleSubmit}
               onEdit={handleEdit}
@@ -238,7 +248,6 @@ const Content = () => {
     </FontLoader>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {

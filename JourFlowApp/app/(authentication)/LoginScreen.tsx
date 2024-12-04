@@ -10,11 +10,95 @@ import {
   Dimensions,
 } from "react-native";
 import "../../assets/fonts/Kalamfont/fonts";
+import * as WebBrowser from "expo-web-browser";
+import * as Google from "expo-auth-session/providers/google";
+import DatabaseService from "../services/database_service";
 import FontLoader from "../services/FontsLoader";
-import { router } from "expo-router";
+import { useAuthorization } from "../services/AuthProvider";
+import {
+  getItem as getToken,
+  setItem as setToken,
+  removeItem as removeToken,
+} from "../services/async_storage";
+import { router, usePathname } from "expo-router";
+import SyncDbService from "../services/syncDb_service";
 
+const iosClientId =
+  "1007829901637-oa4hla8287qmfrr42k272aq2bou7abvm.apps.googleusercontent.com";
 const { width, height } = Dimensions.get("window");
 const LoginScreen = () => {
+  const config = {
+    iosClientId,
+  };
+  const { signIn, status } = useAuthorization();
+  useEffect(() => {
+    const initState = async () => {
+      const authToken = await getToken();
+      await removeToken();
+      console.log(
+        "Token retrieved during initialization from login:",
+        authToken
+      );
+    };
+    initState();
+    console.log("status from Login Screen:  ", status);
+  }, [status]);
+
+  WebBrowser.maybeCompleteAuthSession();
+  const [request, response, promptAsync] = Google.useAuthRequest(config);
+  const handleJWT = async (googleToken: any) => {
+    var response = await fetch("http://localhost:5004/api/auth/google-signin", {
+      // var response = await fetch(
+      //   "http://192.168.2.171:5004/api/auth/google-signin",
+      //   {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-type": "application/json",
+      },
+      body: JSON.stringify({
+        idToken: googleToken,
+      }),
+    });
+    if (response.ok) {
+      console.log("response status of posting to server: ", response.status);
+      const userIdentity = await response.json();
+      console.log("JWT from server: ", userIdentity.token);
+      await signIn(userIdentity.token);
+      await router.replace({
+        pathname: "(homepage)/HomeScreen",
+      });
+
+      router.push("(homepage)/HomeScreen");
+      const user = DatabaseService.getUsers();
+      if (!user || (await user).length === 0) {
+        DatabaseService.insertDynamicUser(
+          userIdentity.userName,
+          userIdentity.token,
+          googleToken,
+          userIdentity.refreshToken
+        );
+      } else {
+        console.log("JWT FROM SERVER IN ELSE CONDITION: ", userIdentity.token);
+        DatabaseService.updateJWT(userIdentity.token, 1);
+      }
+      await SyncDbService.getPosts();
+    } else {
+      console.log("something wrong");
+    }
+  };
+  const handleToken = () => {
+    if (response?.type == "success") {
+      const { authentication } = response;
+      const token = authentication?.idToken;
+      handleJWT(token);
+      console.log("idToken: ", token);
+    }
+  };
+  useEffect(() => {
+    handleToken();
+  }, [response]);
+
   return (
     <FontLoader>
       <SafeAreaView style={styles.container}>
@@ -23,7 +107,6 @@ const LoginScreen = () => {
           <Image
             style={styles.welcomeImg}
             source={require("../../assets/images/welcomebackImg.png")}
-
           />
         </View>
         <View style={styles.bottomDescriptionContainer}>
@@ -36,9 +119,7 @@ const LoginScreen = () => {
         </View>
         <View style={styles.buttonArea}>
           <Animated.View style={[styles.skipButtonContainer]}>
-            <Pressable
-              style={styles.skipButton}
-            >
+            <Pressable style={styles.skipButton}>
               <Text style={styles.skipButtonText}>Skip</Text>
             </Pressable>
           </Animated.View>
@@ -46,9 +127,9 @@ const LoginScreen = () => {
           <Animated.View style={[styles.googleButtonContainer]}>
             <Pressable
               style={styles.googleButton}
-              onPress={() => {
+              onPress={async () => {
                 console.log("google login");
-                router.replace("(homepage)/HomeScreen");
+                promptAsync();
               }}
             >
               <Image
