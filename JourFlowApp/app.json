@@ -19,14 +19,14 @@
       "infoPlist": {
         "UIViewControllerBasedStatusBarAppearance": false
       },
-      "bundleIdentifier": "com.vinh-pham2307.JourFlowAppTest01"
+      "bundleIdentifier": "com.duyntb.JourFlowAppTest01"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.vinh_pham2307.JourFlowAppTest01"
+      "package": "com.duyntb.JourFlowAppTest01"
     },
     "web": {
       "favicon": "./assets/favicon.png"

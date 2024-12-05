@@ -22,8 +22,14 @@ import {
 } from "../services/async_storage";
 import { router, usePathname } from "expo-router";
 
+// iosClientID of Vinh
+// const iosClientId =
+//   "1007829901637-44pifmkcjpeldf2t5jbcln07vfi7vkm1.apps.googleusercontent.com";
+
+// iosClientID of Duy
 const iosClientId =
-  "1007829901637-44pifmkcjpeldf2t5jbcln07vfi7vkm1.apps.googleusercontent.com";
+  "1007829901637-iif9lnnsfvtnmoddt5fr1h1mcrmb93po.apps.googleusercontent.com";
+  
 const { width, height } = Dimensions.get("window");
 const LoginScreen = () => {
   const config = {
