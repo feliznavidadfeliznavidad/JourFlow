@@ -61,7 +61,7 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        await DatabaseService.insertFakeUser(); // Insert clone user data for testing
+        // await DatabaseService.insertFakeUser(); // Insert clone user data for testing
         await loadMarkedDates();
         await checkTodayEntry();
       } catch (error) {

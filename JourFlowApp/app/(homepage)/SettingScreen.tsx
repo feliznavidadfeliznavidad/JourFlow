@@ -54,20 +54,17 @@ const SettingScreen = () => {
       console.log(`new_update_posts.length: ${new_update_posts.length}`);
       const delete_posts = await DatabaseService.getDeletePosts();
       console.log(`delete_posts.length: ${delete_posts.length}`);
+     
+      await SyncDbService.getPosts();
 
-      if (not_sync_posts.length > 0) {
-        const add_response = await SyncDbService.addPosts(not_sync_posts);
-        console.log(add_response);
+      if ( not_sync_posts.length > 0){
+        await SyncDbService.addPosts(not_sync_posts);
       }
-      if (new_update_posts.length > 0) {
-        const update_response = await SyncDbService.updatePosts(
-          new_update_posts
-        );
-        console.log(update_response);
+      if (new_update_posts.length > 0){
+        await SyncDbService.updatePosts(new_update_posts);
       }
-      if (delete_posts.length > 0) {
-        const delete_response = await SyncDbService.deletePosts(delete_posts);
-        console.log(delete_response);
+      if (delete_posts.length > 0){
+        await SyncDbService.deletePosts(delete_posts);
       }
     } catch (error: any) {
       alert(error.message);
@@ -86,13 +83,23 @@ const SettingScreen = () => {
       handleError(error, "printing data");
     }
   }, [handleError]);
+  
+  const printUser = useCallback(async () => {
+    try {
+      const users = await DatabaseService.getUsers();
+      console.log("Users:", users);
+
+      // Optionally refresh marked dates after insertion
+      // await loadMarkedDates();
+    } catch (error) {
+      handleError(error, "printing data");
+    }
+  }, [handleError]);
 
   const addData = useCallback(async () => {
     try {
       await DatabaseService.insertFakePost();
       console.log("Data added successfully!");
-      // Optionally refresh marked dates after insertion
-      // await loadMarkedDates();
     } catch (error) {
       handleError(error, "printing data");
     }
@@ -164,7 +171,12 @@ const SettingScreen = () => {
               <Text style={styles.settingText}>Export</Text>
             </Pressable>
 
-            <Pressable style={styles.settingItem} onPress={() => handlePress()}>
+            <Pressable
+              style={styles.settingItem}
+              onPress={() => {
+                DatabaseService.getUsers();
+              }}
+            >
               <Feather name="lock" size={24} color="black" />
               <Text style={styles.settingText}>Lock Screen</Text>
             </Pressable>
@@ -191,7 +203,11 @@ const SettingScreen = () => {
 
             <Pressable style={styles.settingItem} onPress={() => printData()}>
               <Feather name="code" size={24} color="black" />
-              <Text style={styles.settingText}> Print Data</Text>
+              <Text style={styles.settingText}>Print Data</Text>
+            </Pressable>
+            <Pressable style={styles.settingItem} onPress={() => printUser()}>
+              <Feather name="code" size={24} color="black" />
+              <Text style={styles.settingText}>Print User</Text>
             </Pressable>
             <Pressable style={styles.settingItem} onPress={() => addData()}>
               <Feather name="code" size={24} color="black" />

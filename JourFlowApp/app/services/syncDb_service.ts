@@ -41,17 +41,17 @@ class SyncDbService {
         }
     }
 
-    static async getPosts(): Promise<any> {
+    static async getPosts(): Promise<void> {
         try {
-            const response = await fetch(SERVER_API);
+            const response = await fetch(`${SERVER_API}/get`);
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
             const posts = await response.json();
+            DatabaseService.addSyncPosts(posts);
             console.log("Fetched posts:", posts);
-            return posts;
         } catch (error) {
             console.error("Error fetching posts:", error);
             throw error;

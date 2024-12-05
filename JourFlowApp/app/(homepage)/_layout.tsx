@@ -18,6 +18,7 @@ export default function HomeLayout() {
         />
         <Stack.Screen name="DetailScreen" options={{ gestureEnabled: true }} />
         <Stack.Screen name="SettingScreen" options={{ gestureEnabled: true }} />
+        <Stack.Screen name="SearchScreen" options={{ gestureEnabled: true }} />
       </Stack>
     </AuthProvider>
   );

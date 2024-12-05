@@ -21,12 +21,8 @@ import {
   removeItem as removeToken,
 } from "../services/async_storage";
 import { router, usePathname } from "expo-router";
+import SyncDbService from "../services/syncDb_service";
 
-// iosClientID of Vinh
-// const iosClientId =
-//   "1007829901637-44pifmkcjpeldf2t5jbcln07vfi7vkm1.apps.googleusercontent.com";
-
-// iosClientID of Duy
 const iosClientId =
   "1007829901637-iif9lnnsfvtnmoddt5fr1h1mcrmb93po.apps.googleusercontent.com";
   
@@ -52,7 +48,10 @@ const LoginScreen = () => {
   WebBrowser.maybeCompleteAuthSession();
   const [request, response, promptAsync] = Google.useAuthRequest(config);
   const handleJWT = async (googleToken: any) => {
-    var response = await fetch("http://localhost:5064/api/auth/google-signin", {
+    var response = await fetch("http://localhost:5004/api/auth/google-signin", {
+      // var response = await fetch(
+      //   "http://192.168.2.171:5004/api/auth/google-signin",
+      //   {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -66,18 +65,25 @@ const LoginScreen = () => {
       console.log("response status of posting to server: ", response.status);
       const userIdentity = await response.json();
       console.log("JWT from server: ", userIdentity.token);
-      await signIn("alo vinh nehihi");
+      await signIn(userIdentity.token);
       await router.replace({
         pathname: "(homepage)/HomeScreen",
       });
 
       router.push("(homepage)/HomeScreen");
-      DatabaseService.insertDynamicUser(
-        userIdentity.userName,
-        userIdentity.token,
-        googleToken,
-        userIdentity.refreshToken
-      );
+      const user = DatabaseService.getUsers();
+      if (!user || (await user).length === 0) {
+        DatabaseService.insertDynamicUser(
+          userIdentity.userName,
+          userIdentity.token,
+          googleToken,
+          userIdentity.refreshToken
+        );
+      } else {
+        console.log("JWT FROM SERVER IN ELSE CONDITION: ", userIdentity.token);
+        DatabaseService.updateJWT(userIdentity.token, 1);
+      }
+      await SyncDbService.getPosts();
     } else {
       console.log("something wrong");
     }

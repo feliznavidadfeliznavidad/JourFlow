@@ -81,7 +81,7 @@ const DatabaseService = {
   ) {
     try {
       await this.db.execAsync(`
-        INSERT INTO users (username, jwt, google_access_token, refresh_token) 
+        INSERT INTO users (username, jwt, google_access_token, refresh_token)
         VALUES ('${userName}','${jwt}','${ggAccessToken}','${refreshJWTToken}')
       `);
     } catch (error) {
@@ -118,7 +118,6 @@ const DatabaseService = {
       throw error;
     }
   },
-
   async insertFakePost() {
     try {
       await this.db.execAsync(`
@@ -244,6 +243,28 @@ const DatabaseService = {
       return images;
     } catch (error) {
       console.error("Error fetching images by postId:", error);
+      throw error;
+    }
+  },
+  async updateJWT(jwt: any, id: any) {
+    console.log("UPDATE JWTTTTTTTT");
+    try {
+      const user = await this.db.getAllSync<any>(
+        `
+        SELECT * FROM users WHERE id = ?
+      `,
+        [id]
+      );
+
+      if (!user) {
+        throw new Error(`User with ID ${id} not found`);
+      }
+
+      await this.db.execAsync(`
+        UPDATE users SET jwt = '${jwt}' WHERE id = ${id}
+      `);
+    } catch (error) {
+      console.error("Error updating JWT:", error);
       throw error;
     }
   },
@@ -387,10 +408,40 @@ const DatabaseService = {
     }
   },
 
+  async addSyncPosts(posts: Post[]): Promise<void> {
+    try {
+      posts.forEach(async post => {
+        // Kiểm tra xem post.id có tồn tại trong cơ sở dữ liệu không
+      const existingPost = await this.db.getFirstAsync<string>(
+        `SELECT id FROM posts WHERE id = ?`,
+        [post.id]
+      );
+      
+      if (!existingPost ) {
+        console.log("Adding post");
+        await this.db.runAsync(
+          `INSERT INTO posts (id, user_id, title, icon_path, content, post_date, update_date)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [post.id, post.user_id, post.title, post.icon_path, post.content, post.post_date, post.post_date]
+        );
+        console.log("Post added successfully");
+      }
+      else
+      {
+        console.log("Posts already exists");
+      }
+
+    });
+    } catch (error) {
+      console.error("Error in getNewUpdatePosts:", error);
+      throw error;
+    }
+  },
+
   async getUpdatedPosts(): Promise<Post[]> {
     try {
       return await this.db.getAllAsync<Post>(
-        "SELECT * FROM posts WHERE sync_status = ?",
+        "SELECT id, sync_status, title, content, icon_path, update_date FROM posts WHERE sync_status = ?",
         [post_status.new_update]
       );
     } catch (error) {
@@ -402,7 +453,7 @@ const DatabaseService = {
   async getDeletePosts(): Promise<Post[]> {
     try {
       return await this.db.getAllAsync<Post>(
-        "SELECT * FROM posts WHERE sync_status = ?",
+        "SELECT id, sync_status FROM posts WHERE sync_status = ?",
         [post_status.deleted]
       );
     } catch (error) {
