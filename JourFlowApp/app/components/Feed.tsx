@@ -52,9 +52,14 @@ const Feed = () => {
     <SafeAreaView>
       <View style={styles.feedContainer}>
         <View style={styles.header}>
-          <Pressable onPress={() => handlePressSearch()}>
-            <Feather name="search" size={24} color="black" />
+          <Pressable onPress={() => router.back()} style={styles.backButton}>
+            <Feather name="arrow-left" size={24} color="black" />
           </Pressable>
+          <View style={styles.headerRight}>
+            <Pressable onPress={() => handlePressSearch()}>
+              <Feather name="search" size={24} color="black" />
+            </Pressable>
+          </View>
         </View>
         <ScrollView style={styles.scroll}>
           {posts.map((post, index) => {
@@ -89,9 +94,16 @@ const styles = StyleSheet.create({
   header: {
     padding: 16,
     width: "100%",
-    justifyContent: "center",
-    alignItems: "flex-end",
-    marginRight: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  backButton: {
+    padding: 8,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   searchButton: {
     paddingHorizontal: 10,

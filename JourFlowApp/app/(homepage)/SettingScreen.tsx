@@ -54,16 +54,16 @@ const SettingScreen = () => {
       console.log(`new_update_posts.length: ${new_update_posts.length}`);
       const delete_posts = await DatabaseService.getDeletePosts();
       console.log(`delete_posts.length: ${delete_posts.length}`);
-     
+
       await SyncDbService.getPosts();
 
-      if ( not_sync_posts.length > 0){
+      if (not_sync_posts.length > 0) {
         await SyncDbService.addPosts(not_sync_posts);
       }
-      if (new_update_posts.length > 0){
+      if (new_update_posts.length > 0) {
         await SyncDbService.updatePosts(new_update_posts);
       }
-      if (delete_posts.length > 0){
+      if (delete_posts.length > 0) {
         await SyncDbService.deletePosts(delete_posts);
       }
     } catch (error: any) {
@@ -83,7 +83,7 @@ const SettingScreen = () => {
       handleError(error, "printing data");
     }
   }, [handleError]);
-  
+
   const printUser = useCallback(async () => {
     try {
       const users = await DatabaseService.getUsers();
@@ -108,7 +108,14 @@ const SettingScreen = () => {
   return (
     <FontLoader>
       <SafeAreaView style={styles.safeArea}>
-        <Text style={styles.title}>Setting</Text>
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} style={styles.backButton}>
+            <Feather name="arrow-left" size={24} color="black" />
+          </Pressable>
+          <Text style={styles.title}>Setting</Text>
+          <View style={styles.placeholder} />
+        </View>
+
         <View style={styles.main}>
           <View style={styles.cardProfile}>
             <View style={styles.profileContent}>
@@ -234,12 +241,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FAF7F0",
   },
-  title: {
-    fontFamily: "Kalam-Regular",
-    fontSize: 28,
-    textAlign: "center",
-    marginVertical: 20,
-  },
   main: {
     flex: 1,
     paddingHorizontal: 16,
@@ -311,6 +312,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "red",
     textAlign: "center",
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    marginVertical: 20,
+  },
+  backButton: {
+    padding: 8,
+  },
+  title: {
+    fontFamily: "Kalam-Regular",
+    fontSize: 28,
+    flex: 1,
+    textAlign: "center",
+  },
+  placeholder: {
+    width: 40,  // Matches backButton width for centering
   },
 });
 

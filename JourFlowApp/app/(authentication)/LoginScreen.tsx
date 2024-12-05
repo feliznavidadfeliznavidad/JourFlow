@@ -8,6 +8,7 @@ import {
   Animated,
   SafeAreaView,
   Dimensions,
+  Alert,
 } from "react-native";
 import "../../assets/fonts/Kalamfont/fonts";
 import * as WebBrowser from "expo-web-browser";

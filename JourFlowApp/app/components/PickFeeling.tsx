@@ -1,4 +1,4 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import LottieView from "lottie-react-native";
@@ -6,6 +6,7 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 import icons from "../../assets/icon/icon";
 import { parse } from "date-fns";
 import date_format from "../services/dateFormat_service";
+import Feather from "@expo/vector-icons/Feather";
 
 const PickFeeling = () => {
   const { formattedDate } = useLocalSearchParams<{ formattedDate: any }>();
@@ -23,8 +24,9 @@ const PickFeeling = () => {
     if (isSelect != -1) {
       router.push({
         pathname: "DetailScreen",
-        params: { 
-          icon , formattedDate
+        params: {
+          icon,
+          formattedDate,
         },
       });
     }
@@ -32,8 +34,14 @@ const PickFeeling = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <View style={styles.headerRow}>
+          <Pressable onPress={() => router.back()} style={styles.backButton}>
+            <Feather name="arrow-left" size={24} color="black" />
+          </Pressable>
+          <Text style={styles.headerText}>Pick your day's feeling</Text>
+          <View style={styles.placeholder} />
+        </View>
         <Text style={styles.date}>{date_format(receiveDate).fullDate}</Text>
-        <Text style={styles.headerText}>Pick your day's feeling</Text>
       </View>
 
       <View style={styles.emotionsContainer}>
@@ -82,9 +90,18 @@ const styles = StyleSheet.create({
   header: {
     padding: 24,
     marginBottom: 24,
-    display:"flex",
-    alignItems:"center",
-    justifyContent:"center"
+    alignItems: "center",
+  },
+  headerRow: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  backButton: {
+    padding: 8,
+    width: 40,
   },
   headerText: {
     fontSize: 18,
@@ -92,6 +109,11 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#38434D",
     fontFamily: "Kalam-Regular",
+    flex: 1,
+    textAlign: "center",
+  },
+  placeholder: {
+    width: 40,
   },
   emotionsContainer: {
     flexDirection: "row",

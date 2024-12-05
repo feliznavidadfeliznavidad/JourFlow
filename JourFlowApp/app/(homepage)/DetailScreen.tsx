@@ -30,6 +30,7 @@ interface Post {
   update_date: string;
 }
 
+
 const Content = () => {
   const [postData, setPostData] = useState<Post[]>([]);
   const [content, setContent] = useState("");
@@ -223,7 +224,7 @@ const Content = () => {
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
-              <Header iconSource={iconSource} receiveDate={receiveDate} />
+              <Header iconSource={iconSource} receiveDate={receiveDate} onBack={() => router.back()}/>
               <ImageList images={images} />
               <ContentInput
                 title={title}

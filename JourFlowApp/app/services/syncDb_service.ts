@@ -1,3 +1,4 @@
+import { Alert } from "react-native";
 import { IconPath } from "../../assets/icon/icon";
 import DatabaseService from "./database_service";
 
