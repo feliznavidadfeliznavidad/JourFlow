@@ -1,6 +1,7 @@
 # Ignore node_modules for JourFlowApp
 JourFlowApp/node_modules/
 JourFlowApp/ios/
+JourFlowApp/.vscode/
 JourFlowApp/android/
 JourFlowApp/.expo/
 JourFlowApp/eas.json
