@@ -17,7 +17,7 @@ import { format, isAfter, isBefore, parseISO } from "date-fns";
 import DatabaseService from "../services/database_service";
 import colors from "../../assets/colors/colors";
 import icons, { IconPath } from "../../assets/icon/icon";
-// Enhanced type definitions with improved type safety
+
 interface Post {
   post_date: string;
   update_date: string;
@@ -57,7 +57,6 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
     Alert.alert("Error", `An error occurred while ${context}`);
   }, []);
 
-  // Initialize app and load data
   useEffect(() => {
     const initializeApp = async () => {
       try {

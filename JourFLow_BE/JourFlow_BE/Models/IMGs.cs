@@ -10,11 +10,14 @@ namespace JourFlow_BE.Models
     public class IMGs
     {
         [Key]
-        public required int Id { get; set; }
+        public required string Id { get; set; }
         [Required]
         [ForeignKey("Posts")]
         public required string PostId { get; set; }
         public string? Url { get; set; }
+        public string? PublicId { get; set; }
+        public string? CloudinaryUrl { get; set; }
+        public int? SyncStatus { get; set; }
         public Posts? Posts{ get; set; }
         
     }

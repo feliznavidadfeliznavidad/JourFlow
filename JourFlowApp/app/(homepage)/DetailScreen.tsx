@@ -1,4 +1,3 @@
-// Content.tsx
 import React, { useEffect, useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -20,6 +19,7 @@ import { ImageList } from "../components/ImageList";
 import { ContentInput } from "../components/ContentEditor";
 import { Footer } from "../components/FooterActions";
 import { useAuthorization } from "../services/AuthProvider";
+
 interface Post {
   id: string;
   user_id: number;
@@ -29,7 +29,6 @@ interface Post {
   post_date: string;
   update_date: string;
 }
-
 
 const Content = () => {
   const [postData, setPostData] = useState<Post[]>([]);
@@ -45,14 +44,17 @@ const Content = () => {
     icon?: string;
     formattedDate: string;
   }>();
+
   const formattedDate = params.formattedDate;
   const iconFromParams = params.icon;
 
   const receiveDate = new Date(formattedDate);
   const { status } = useAuthorization();
+
   useEffect(() => {
     console.log("rom detail screen: ", status);
   }, [status]);
+
   const checkExists = async () => {
     try {
       const date = new Date(formattedDate);
@@ -100,9 +102,15 @@ const Content = () => {
       Alert.alert("Error", "Please enter a title or content");
       return;
     }
-
     try {
-      const images = await saveImgsToLocalStorage();
+      const savedImgPaths = await saveImgsToLocalStorage();
+
+      const images = savedImgPaths.map((url) => ({
+        url,
+        public_id: "",
+        cloudinary_url: ""
+       }));
+
       const updateData = { title, content, images };
 
       if (currentPostId) {
@@ -131,7 +139,6 @@ const Content = () => {
     }
   };
 
-  // Hàm chọn ảnh
   const pickImage = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -152,7 +159,6 @@ const Content = () => {
     }
   };
 
-  // Hàm lưu ảnh vào bộ nhớ
   const saveImgsToLocalStorage = async () => {
     if (images.length === 0) return [];
 
@@ -172,15 +178,20 @@ const Content = () => {
     return imgLinks;
   };
 
-  // Hàm xử lý khi submit
   const handleSubmit = async () => {
     if (!title.trim() && !content.trim()) {
       Alert.alert("Please enter a title or content");
       return;
     }
-
     try {
       const savedImgPaths = await saveImgsToLocalStorage();
+
+      const images = savedImgPaths.map((url) => ({
+        url,
+        public_id: "",
+        cloudinary_url: ""
+       }));
+
       const user_id = 1;
 
       const post_date = receiveDate.toISOString();
@@ -191,7 +202,7 @@ const Content = () => {
         icon_path: currentIcon,
         user_id,
         post_date,
-        images: savedImgPaths,
+        images: images,
       };
 
       await DatabaseService.createPost(postData);

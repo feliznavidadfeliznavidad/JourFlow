@@ -33,9 +33,12 @@ interface Post {
 }
 
 interface Imgs {
-  id: number;
+  id: string;
   post_id: string;
   url: string;
+  public_id: string;
+  cloudinary_url: string;
+  sync_status: number;
 }
 
 const Card: React.FC<Post> = (post) => {

@@ -13,8 +13,10 @@ JourFlowApp/.env
 JourFLow_BE/.vscode/
 JourFLow_BE/JourFlow_BE.sln
 JourFLow_BE/JourFlow_BE/bin/
+JourFLow_BE/JourFlow_BE/bin/Debug
 JourFLow_BE/JourFlow_BE/obj/
 JourFLow_BE/JourFlow_BE/appsettings.json
+JourFLow_BE/JourFlow_BE/Migrations
 
 
 
