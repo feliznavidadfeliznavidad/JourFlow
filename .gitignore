@@ -18,7 +18,7 @@ JourFLow_BE/JourFlow_BE/obj/
 JourFLow_BE/JourFlow_BE/appsettings.json
 JourFLow_BE/JourFlow_BE/Migrations
 
-
+JourFLow_BE/JourFlow_BE/bin/
 
 # Ignore system files
 .DS_Store
