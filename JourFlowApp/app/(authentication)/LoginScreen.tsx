@@ -16,11 +16,7 @@ import * as Google from "expo-auth-session/providers/google";
 import DatabaseService from "../services/database_service";
 import FontLoader from "../services/FontsLoader";
 import { useAuthorization } from "../services/AuthProvider";
-import {
-  getItem as getToken,
-  setItem as setToken,
-  removeItem as removeToken,
-} from "../services/async_storage";
+import { getItem, setItem,removeItem } from "../services/async_storage";
 import { router, usePathname } from "expo-router";
 import SyncDbService from "../services/syncDb_service";
 import uuid from "react-native-uuid";
@@ -37,8 +33,8 @@ const LoginScreen = () => {
   const { signIn, status } = useAuthorization();
   useEffect(() => {
     const initState = async () => {
-      const authToken = await getToken();
-      await removeToken();
+      // const authToken = await getItem("token");
+      await removeItem("token");
       // console.log(
       //   "Token retrieved during initialization from login:",
       //   authToken
@@ -68,7 +64,7 @@ const LoginScreen = () => {
       // console.log("response status of posting to server: ", response.status);
       const userIdentity = await response.json();
       // console.log("JWT from server: ", userIdentity.token);
-      await signIn(userIdentity.token);
+      await signIn( userIdentity.token, userIdentity.userId);
       await router.replace({
         pathname: "(homepage)/HomeScreen",
       });
@@ -86,7 +82,7 @@ const LoginScreen = () => {
         );
       } else {
         // console.log("JWT FROM SERVER IN ELSE CONDITION: ", userIdentity.token);
-        DatabaseService.updateJWT(userIdentity.token, 1);
+        DatabaseService.updateJWT(userIdentity.token, userIdentity.userId);
       }
       await SyncDbService.getPosts(userIdentity.userId);
     } else {

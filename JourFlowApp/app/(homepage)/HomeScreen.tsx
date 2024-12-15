@@ -7,18 +7,14 @@ import { createMaterialTopTabNavigator } from "@react-navigation/material-top-ta
 import Feed from "../components/Feed";
 import { AuthProvider, useAuthorization } from "../services/AuthProvider";
 import { useEffect } from "react";
-import {
-  getItem as getToken,
-  setItem as setToken,
-  removeItem as removeToken,
-} from "../services/async_storage";
+import {getItem ,setItem ,removeItem ,} from "../services/async_storage";
 const Tab = createMaterialTopTabNavigator();
 
 export default function Page() {
   const { status } = useAuthorization();
   useEffect(() => {
     const initState = async () => {
-      const authToken = await getToken();
+      const authToken = await getItem("token");
       console.log(
         "Token retrieved during initialization from homescreen:",
         authToken

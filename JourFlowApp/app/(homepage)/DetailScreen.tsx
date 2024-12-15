@@ -19,6 +19,7 @@ import { ImageList } from "../components/ImageList";
 import { ContentInput } from "../components/ContentEditor";
 import { Footer } from "../components/FooterActions";
 import { useAuthorization } from "../services/AuthProvider";
+import { getItem } from "../services/async_storage";
 
 interface Post {
   id: string;
@@ -192,7 +193,7 @@ const Content = () => {
         cloudinary_url: ""
        }));
 
-      const user_id = await DatabaseService.getUserId();
+      const user_id = await getItem("userId");
 
       const post_date = receiveDate.toISOString();
 

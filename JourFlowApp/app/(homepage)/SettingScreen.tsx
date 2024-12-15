@@ -10,6 +10,7 @@ import { router } from "expo-router";
 import DatabaseService from "../services/database_service";
 import SyncDbService from "../services/syncDb_service";
 import { useAuthorization } from "../services/AuthProvider";
+import { getItem } from "../services/async_storage";
 
 const SettingScreen = () => {
   const { status, signOut } = useAuthorization();
@@ -48,7 +49,7 @@ const SettingScreen = () => {
 
   const handleBackup = async () => {
     try {
-        const userId = await DatabaseService.getUserId();
+        const userId = await getItem("userId");
         console.log(`userId: ${userId}`);
         console.log("Starting backup process...");
         const not_sync_posts = await DatabaseService.getNotSyncPosts();
@@ -91,7 +92,7 @@ const SettingScreen = () => {
             console.log("Posts deleted.");
         }
 
-        console.log("Backup process completed successfully.");
+        alert("Backup process completed successfully.");
     } catch (error: any) {
         alert(error.message);
         console.error("Error backing up database:", error);

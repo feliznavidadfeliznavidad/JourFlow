@@ -73,8 +73,9 @@ namespace JourFlow_BE.Controllers
                 } else {
                     var token = _services.GenerateJWT(currentUser);
                     var refreshToken = await _services.GenerateRefreshToken(payload.Email);
+                    Console.WriteLine("Current User" + currentUser?.Id);
                     return Ok(new { 
-                        userId = currentUser.Id,
+                        userId = currentUser?.Id,
                         token,
                         refreshToken
                     }); 

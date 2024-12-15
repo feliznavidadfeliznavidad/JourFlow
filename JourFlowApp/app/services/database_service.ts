@@ -2,7 +2,7 @@ import * as SQLite from "expo-sqlite";
 import { IconPath } from "../../assets/icon/icon";
 import uuid from "react-native-uuid";
 import post_status from "../../assets/post_status";
-
+import {getItem} from "./async_storage";
 interface Post {
   id: string;
   user_id: string;
@@ -42,6 +42,7 @@ const randomUUID = () => {
 };
 
 const DatabaseService = {
+
   db: SQLite.openDatabaseSync("JourFlow"),
 
   async init() {
@@ -59,7 +60,7 @@ const DatabaseService = {
         
         CREATE TABLE IF NOT EXISTS posts (
           id TEXT PRIMARY KEY,
-          user_id INTEGER,
+          user_id TEXT,
           title TEXT NOT NULL,
           icon_path TEXT NOT NULL,
           content TEXT NOT NULL,
@@ -180,9 +181,10 @@ const DatabaseService = {
 
   async getAllImages(): Promise<Image[]> {
     try {
+      const currentUserId = await getItem("userId");
       return await this.db.getAllAsync<Image>(
-        "SELECT * FROM images join posts on images.post_id = posts.id Where posts.sync_status != ?",
-        [post_status.deleted]
+        "SELECT * FROM images join posts on images.post_id = posts.id Where posts.user_id = ? AND posts.sync_status != ?",
+        [ currentUserId, post_status.deleted]
       );
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -194,14 +196,13 @@ const DatabaseService = {
     imageId: string,
     publicId: string,
     cloudinaryUrl: string,
-    syncStatus: number
   ): Promise<void> {
     try {
       await this.db.runAsync(
         `UPDATE images 
-         SET public_id = ?, cloudinary_url = ?, sync_status = ?
+         SET public_id = ?, cloudinary_url = ?
          WHERE id = ?`,
-        [publicId, cloudinaryUrl, syncStatus, imageId]
+        [publicId, cloudinaryUrl, imageId]
       );
     } catch (error) {
       console.error("Error updating image cloudinary info:", error);
@@ -210,11 +211,12 @@ const DatabaseService = {
   },
   async getPosts(): Promise<Post[]> {
     try {
+      const currentUserId = await getItem("userId");
       const posts = await this.db.getAllAsync<any>(
         `
-        SELECT * FROM posts WHERE sync_status != ?
+        SELECT * FROM posts WHERE posts.user_id = ? AND sync_status != ?
       `,
-        [post_status.deleted]
+        [currentUserId ,post_status.deleted]
       );
 
       return posts;
@@ -227,11 +229,12 @@ const DatabaseService = {
   async getPostsByDate(date: Date): Promise<Post[]> {
     const formattedDate = date.toISOString().split("T")[0];
     try {
+      const currentUserId = await getItem("userId");
       const posts = await this.db.getAllAsync<any>(
         `
-        SELECT * FROM posts WHERE DATE(post_date) = ? AND sync_status != ?
+        SELECT * FROM posts WHERE posts.user_id = ? AND DATE(post_date) = ? AND sync_status != ?
       `,
-        [formattedDate, post_status.deleted]
+        [currentUserId,formattedDate, post_status.deleted]
       );
       return posts;
     } catch (error) {
@@ -246,17 +249,6 @@ const DatabaseService = {
         SELECT * FROM users
       `);
       return users;
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      throw error;
-    }
-  },
-  async getUserId(): Promise<string> {
-    try {
-      const userId = await this.db.getFirstAsync<User>(`
-        SELECT id FROM users
-      `) ;
-      return userId?.id || "";
     } catch (error) {
       console.error("Error fetching users:", error);
       throw error;
@@ -279,9 +271,10 @@ const DatabaseService = {
 
   async getPostImages(postId: string): Promise<Image[]> {
     try {
+      const currentUserId = await getItem("userId");
       const images = await this.db.getAllAsync<Image>(
-        `SELECT * FROM images join posts on images.post_id = posts.id WHERE post_id = ? AND posts.sync_status != ? AND images.sync_status != ?`,
-        [postId, post_status.deleted, post_status.deleted]
+        `SELECT * FROM images join posts on images.post_id = posts.id WHERE posts.user_id = ? AND images.post_id = ? AND posts.sync_status != ?`,
+        [currentUserId,postId, post_status.deleted]
       );
       console.log("Images from DB " + JSON.stringify(images));
       return images;
@@ -294,7 +287,7 @@ const DatabaseService = {
   async updateJWT(jwt: any, id: any) {
     console.log("UPDATE JWTTTTTTTT");
     try {
-      const user = await this.db.getAllSync<any>(
+      const user = await this.db.getAllAsync<string>(
         `
         SELECT * FROM users WHERE id = ?
       `,
@@ -398,9 +391,10 @@ const DatabaseService = {
   async hasPostsOnDate(date: Date): Promise<boolean> {
     const formattedDate = date.toISOString().split("T")[0];
     try {
+      const currentUserId = await getItem("userId");
       const result = await this.db.getAllAsync<{ count: number }>(
-        `SELECT COUNT(*) as count FROM posts WHERE DATE(post_date) = ? AND sync_status != ?`,
-        [formattedDate, post_status.deleted]
+        `SELECT COUNT(*) as count FROM posts WHERE posts.user_id = ? AND DATE(post_date) = ? AND sync_status != ?`,
+        [currentUserId,formattedDate, post_status.deleted]
       );
       return result[0]?.count > 0;
     } catch (error) {
@@ -446,9 +440,11 @@ const DatabaseService = {
 
   async getNotSyncPosts(): Promise<Post[]> {
     try {
+      const currentUserId = await getItem("userId");
+      console.log("currentUserId :", currentUserId);
       return await this.db.getAllAsync<Post>(
-        "SELECT * FROM posts WHERE sync_status = ? ",
-        [post_status.not_sync]
+        "SELECT * FROM posts WHERE posts.user_id = ? AND sync_status = ?",
+        [currentUserId,post_status.not_sync]
       );
     } catch (error) {
       console.error("Error in getNotSyncPosts:", error);
@@ -457,12 +453,13 @@ const DatabaseService = {
   },
   async getNotSyncImages(): Promise<Image[]> {
     try {
+      const currentUserId = await getItem("userId");
       return await this.db.getAllAsync<Image>(
-        "SELECT * FROM images WHERE sync_status = ?",
-        [post_status.not_sync]
+        "SELECT * FROM images join posts on images.post_id = posts.id WHERE posts.user_id = ? AND images.sync_status = ?",
+        [currentUserId,post_status.not_sync]
       );
     } catch (error) {
-      console.error("Error in getNotSyncPosts:", error);
+      console.error("Error in getNotSyncImages:", error);
       throw error;
     }
   },
@@ -470,11 +467,12 @@ const DatabaseService = {
 
   async addSyncPosts(posts: Post[]): Promise<void> {
     try {
+      const currentUserId = await getItem("userId");
       posts.forEach(async (post) => {
         // Kiểm tra xem post.id có tồn tại trong cơ sở dữ liệu không
         const existingPost = await this.db.getFirstAsync<string>(
-          `SELECT id FROM posts WHERE id = ?`,
-          [post.id]
+          `SELECT id FROM posts WHERE posts.user_id = ? AND id = ?`,
+          [currentUserId,post.id]
         );
 
         if (!existingPost) {
@@ -505,9 +503,10 @@ const DatabaseService = {
 
   async getUpdatedPosts(): Promise<Post[]> {
     try {
+      const currentUserId = await getItem("userId");
       return await this.db.getAllAsync<Post>(
-        "SELECT id, sync_status, title, content, icon_path, update_date FROM posts WHERE sync_status = ?",
-        [post_status.new_update]
+        "SELECT id, sync_status, title, content, icon_path, update_date FROM posts WHERE posts.user_id = ? AND sync_status = ?",
+        [currentUserId,post_status.new_update]
       );
     } catch (error) {
       console.error("Error in getNewUpdatePosts:", error);
@@ -517,9 +516,10 @@ const DatabaseService = {
 
   async getDeletePosts(): Promise<Post[]> {
     try {
+      const currentUserId = await getItem("userId");
       return await this.db.getAllAsync<Post>(
-        "SELECT id, sync_status FROM posts WHERE sync_status = ?",
-        [post_status.deleted]
+        "SELECT id, sync_status FROM posts WHERE posts.user_id = ? AND sync_status = ?",
+        [currentUserId,post_status.deleted]
       );
     } catch (error) {
       console.error("Error in getDeletePosts:", error);
@@ -556,10 +556,11 @@ const DatabaseService = {
 
   async syncServerImages(images: Image[]): Promise<void> {
     try {
+      const currentUserId = await getItem("userId");
       images.forEach(async (image) => {
         const existingImage = await this.db.getFirstAsync<string>(
-          `SELECT id FROM images WHERE id = ?`,
-          [image.id]
+          `SELECT id FROM images join posts on images.post_id = posts.id WHERE posts.user_id = ? AND images.id = ?`,
+          [currentUserId,image.id]
         );
 
         if (!existingImage) {

@@ -158,18 +158,16 @@ class SyncDbService {
             const publicId = cloudinaryUrl.split('/').pop()?.split('.')[0] || '';
             
             // Update local image record with Cloudinary info
-            const updatedImage = await DatabaseService.updateImageCloudinaryInfo(
+            await DatabaseService.updateImageCloudinaryInfo(
               image.id,
               publicId,
               cloudinaryUrl,
-              post_status.not_sync
             );
 
             syncedImages.push({
               ...image,
               public_id: publicId,
               cloudinary_url: cloudinaryUrl,
-              sync_status: post_status.not_sync
             });
           } else {
             console.warn(`Failed to upload image: ${image.id}`);
