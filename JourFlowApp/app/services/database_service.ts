@@ -5,7 +5,7 @@ import post_status from "../../assets/post_status";
 
 interface Post {
   id: string;
-  user_id: number;
+  user_id: string;
   title: string;
   icon_path: IconPath;
   content: string;
@@ -15,7 +15,7 @@ interface Post {
 }
 
 interface User {
-  id: number;
+  id: string;
   username: string;
   jwt: string;
   google_access_token: string;
@@ -50,7 +50,7 @@ const DatabaseService = {
         PRAGMA foreign_keys = ON;   
         
         CREATE TABLE IF NOT EXISTS users (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          id text PRIMARY KEY,
           username TEXT NULL,
           jwt TEXT NOT NULL,
           google_access_token TEXT NOT NULL,
@@ -87,6 +87,7 @@ const DatabaseService = {
   },
 
   async insertDynamicUser(
+    userId : string,
     userName: any,
     jwt: any,
     ggAccessToken: any,
@@ -94,8 +95,8 @@ const DatabaseService = {
   ) {
     try {
       await this.db.execAsync(`
-        INSERT INTO users (username, jwt, google_access_token, refresh_token)
-        VALUES ('${userName}','${jwt}','${ggAccessToken}','${refreshJWTToken}')
+        INSERT INTO users (id ,username, jwt, google_access_token, refresh_token)
+        VALUES ('${userId}','${userName}','${jwt}','${ggAccessToken}','${refreshJWTToken}')
       `);
     } catch (error) {
       console.error("Error inserting user:", error);
@@ -118,19 +119,6 @@ const DatabaseService = {
     }
   },
 
-  async insertUser(user: Omit<User, "id">): Promise<number> {
-    try {
-      const result = await this.db.runAsync(
-        `INSERT INTO users (username, jwt, google_access_token, refresh_token) 
-         VALUES (?, ?, ?, ?)`,
-        [user.username, user.jwt, user.google_access_token, user.refresh_token]
-      );
-      return result.lastInsertRowId;
-    } catch (error) {
-      console.error("Error inserting user:", error);
-      throw error;
-    }
-  },
 
   async insertFakePost() {
     try {
@@ -153,7 +141,7 @@ const DatabaseService = {
     title: string;
     content: string;
     icon_path: string;
-    user_id: number;
+    user_id: string;
     post_date: string;
     images?: Array<{
       url: string;
@@ -162,34 +150,24 @@ const DatabaseService = {
     }>;
   }): Promise<string> {
     try {
-      const {
-        title,
-        content,
-        icon_path,
-        user_id,
-        post_date,
-        images = [],
-      } = post;
-
+      console.log(post);
       const post_id = randomUUID();
 
       await this.db.runAsync(
         `INSERT INTO posts (id, user_id, title, icon_path, content, post_date, update_date)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [post_id, user_id, title, icon_path, content, post_date, post_date]
+        [post_id, post.user_id, post.title, post.icon_path, post.content, post.post_date, post.post_date]
       );
 
-      if (images.length > 0) {
-        const imageValues = images
+      if (post.images && post.images!.length > 0) {
+        const imageValues = post.images
           .map(
             (img) =>
-              `('${randomUUID()}', '${post_id}', '${img.url}', '${img.public_id || ""}', '${
-                img.cloudinary_url || ""
-              }', 0)`
+              `('${randomUUID()}', '${post_id}', '${img.url}', '${img.public_id || ""}', '${img.cloudinary_url || ""}')`
           )
           .join(",");
         await this.db.execAsync(
-          `INSERT INTO images (id, post_id, url, public_id, cloudinary_url, sync_status) VALUES ${imageValues}`
+          `INSERT INTO images (id, post_id, url, public_id, cloudinary_url) VALUES ${imageValues}`
         );
       }
 
@@ -230,18 +208,6 @@ const DatabaseService = {
       throw error;
     }
   },
-
-  async getUnsyncedImages(): Promise<Image[]> {
-    try {
-      return await this.db.getAllAsync<Image>(
-        "SELECT * FROM images WHERE sync_status = 0"
-      );
-    } catch (error) {
-      console.error("Error fetching unsynced images:", error);
-      throw error;
-    }
-  },
-
   async getPosts(): Promise<Post[]> {
     try {
       const posts = await this.db.getAllAsync<any>(
@@ -285,12 +251,37 @@ const DatabaseService = {
       throw error;
     }
   },
+  async getUserId(): Promise<string> {
+    try {
+      const userId = await this.db.getFirstAsync<User>(`
+        SELECT id FROM users
+      `) ;
+      return userId?.id || "";
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      throw error;
+    }
+  },
+
+  async checkExistingUser(id : string): Promise<Boolean> {
+    try {
+      const user = await this.db.getFirstAsync<Boolean>(`
+        SELECT id FROM users WHERE id = ?
+      `, [id]);
+      if (user) return true;
+      return false;
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      throw error;
+    }
+  },
+
 
   async getPostImages(postId: string): Promise<Image[]> {
     try {
       const images = await this.db.getAllAsync<Image>(
-        `SELECT * FROM images join posts on images.post_id = posts.id WHERE post_id = ? AND posts.sync_status != ?`,
-        [postId, post_status.deleted]
+        `SELECT * FROM images join posts on images.post_id = posts.id WHERE post_id = ? AND posts.sync_status != ? AND images.sync_status != ?`,
+        [postId, post_status.deleted, post_status.deleted]
       );
       console.log("Images from DB " + JSON.stringify(images));
       return images;
@@ -377,7 +368,7 @@ const DatabaseService = {
         if (images.length > 0) {
           const imageValues = images
             .map((img) => 
-              `('${randomUUID()}', '${postId}', '${img.url}', '${img.public_id || ""}', '${img.cloudinary_url || ""}', 0)`
+              `('${randomUUID()}', '${postId}', '${img.url}', '${img.public_id || ""}', '${img.cloudinary_url || ""}')`
             )
             .join(",");
           await this.db.execAsync(
@@ -456,7 +447,7 @@ const DatabaseService = {
   async getNotSyncPosts(): Promise<Post[]> {
     try {
       return await this.db.getAllAsync<Post>(
-        "SELECT * FROM posts WHERE sync_status = ? or sync_status = ?",
+        "SELECT * FROM posts WHERE sync_status = ? ",
         [post_status.not_sync]
       );
     } catch (error) {
@@ -464,6 +455,18 @@ const DatabaseService = {
       throw error;
     }
   },
+  async getNotSyncImages(): Promise<Image[]> {
+    try {
+      return await this.db.getAllAsync<Image>(
+        "SELECT * FROM images WHERE sync_status = ?",
+        [post_status.not_sync]
+      );
+    } catch (error) {
+      console.error("Error in getNotSyncPosts:", error);
+      throw error;
+    }
+  },
+
 
   async addSyncPosts(posts: Post[]): Promise<void> {
     try {
@@ -539,13 +542,11 @@ const DatabaseService = {
     }
   },
 
-  async updateImageSyncStatus(imageId: string, syncStatus: number): Promise<void> {
+  async updateImageSyncStatus(): Promise<void> {
     try {
       await this.db.runAsync(
-        `UPDATE images 
-         SET sync_status = ?
-         WHERE id = ?`,
-        [syncStatus, imageId]
+        "UPDATE images SET sync_status = ? WHERE sync_status = ?",
+        [post_status.synced, post_status.not_sync]
       );
     } catch (error) {
       console.error("Error updating image sync status:", error);
@@ -555,28 +556,35 @@ const DatabaseService = {
 
   async syncServerImages(images: Image[]): Promise<void> {
     try {
-      await this.db.runAsync(
-        `DELETE FROM images WHERE sync_status = 1`
-      );
-      for (const image of images) {
-        await this.db.runAsync(
-          `INSERT OR REPLACE INTO images (
-            id, post_id, url, public_id, cloudinary_url, sync_status
-          ) VALUES (?, ?, ?, ?, ?, 1)`,
-          [
-            image.id,
-            image.post_id,
-            image.url,
-            image.public_id,
-            image.cloudinary_url
-          ]
+      images.forEach(async (image) => {
+        const existingImage = await this.db.getFirstAsync<string>(
+          `SELECT id FROM images WHERE id = ?`,
+          [image.id]
         );
-      }
+
+        if (!existingImage) {
+          console.log("Adding image");
+          await this.db.runAsync(
+            `INSERT INTO images (id, post_id, url, public_id, cloudinary_id, sync_status) VALUES (?, ?, ?, ?, ?, ?)`,
+            [
+              image.id,
+              image.post_id,
+              image.url,
+              image.public_id,
+              image.cloudinary_url,
+              post_status.synced
+            ]
+          );
+          console.log("Images added successfully");
+        } else {
+          console.log("Images already exists");
+        }
+      });
     } catch (error) {
-      console.error("Error syncing server images:", error);
+      console.error("Error in getNewUpdatePosts:", error);
       throw error;
     }
-  }
+  },
 };
 
 export default DatabaseService;

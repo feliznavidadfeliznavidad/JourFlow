@@ -15,7 +15,7 @@ namespace JourFlow_BE.Models
         public required string Id { get; set; } 
         [Required]
         [ForeignKey("Users")]
-        public required int UserId { get; set; } 
+        public Guid UserId { get; set; } 
         public string? Title { get; set; }
         public string? IconPath { get; set; }
         [Required]

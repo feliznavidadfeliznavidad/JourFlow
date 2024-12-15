@@ -23,9 +23,11 @@ import {
 } from "../services/async_storage";
 import { router, usePathname } from "expo-router";
 import SyncDbService from "../services/syncDb_service";
+import uuid from "react-native-uuid";
+
 
 const iosClientId =
-  "1007829901637-iif9lnnsfvtnmoddt5fr1h1mcrmb93po.apps.googleusercontent.com";
+  "1007829901637-oa4hla8287qmfrr42k272aq2bou7abvm.apps.googleusercontent.com";
   
 const { width, height } = Dimensions.get("window");
 const LoginScreen = () => {
@@ -37,13 +39,13 @@ const LoginScreen = () => {
     const initState = async () => {
       const authToken = await getToken();
       await removeToken();
-      console.log(
-        "Token retrieved during initialization from login:",
-        authToken
-      );
+      // console.log(
+      //   "Token retrieved during initialization from login:",
+      //   authToken
+      // );
     };
     initState();
-    console.log("status from Login Screen:  ", status);
+    // console.log("status from Login Screen:  ", status);
   }, [status]);
 
   WebBrowser.maybeCompleteAuthSession();
@@ -63,28 +65,30 @@ const LoginScreen = () => {
       }),
     });
     if (response.ok) {
-      console.log("response status of posting to server: ", response.status);
+      // console.log("response status of posting to server: ", response.status);
       const userIdentity = await response.json();
-      console.log("JWT from server: ", userIdentity.token);
+      // console.log("JWT from server: ", userIdentity.token);
       await signIn(userIdentity.token);
       await router.replace({
         pathname: "(homepage)/HomeScreen",
       });
 
       router.push("(homepage)/HomeScreen");
-      const user = DatabaseService.getUsers();
-      if (!user || (await user).length === 0) {
+      const isUser = await DatabaseService.checkExistingUser(userIdentity.userId);
+      // console.log("userIdentity.userId: ", isUser);
+      if (!isUser) {
         DatabaseService.insertDynamicUser(
+          userIdentity.userId,
           userIdentity.userName,
           userIdentity.token,
           googleToken,
           userIdentity.refreshToken
         );
       } else {
-        console.log("JWT FROM SERVER IN ELSE CONDITION: ", userIdentity.token);
+        // console.log("JWT FROM SERVER IN ELSE CONDITION: ", userIdentity.token);
         DatabaseService.updateJWT(userIdentity.token, 1);
       }
-      await SyncDbService.getPosts();
+      await SyncDbService.getPosts(userIdentity.userId);
     } else {
       console.log("something wrong");
     }
@@ -94,7 +98,7 @@ const LoginScreen = () => {
       const { authentication } = response;
       const token = authentication?.idToken;
       handleJWT(token);
-      console.log("idToken: ", token);
+      // console.log("idToken: ", token);
     }
   };
   useEffect(() => {
@@ -130,7 +134,6 @@ const LoginScreen = () => {
             <Pressable
               style={styles.googleButton}
               onPress={async () => {
-                console.log("google login");
                 promptAsync();
               }}
             >

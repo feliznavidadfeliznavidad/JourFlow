@@ -22,7 +22,7 @@ import { useAuthorization } from "../services/AuthProvider";
 
 interface Post {
   id: string;
-  user_id: number;
+  user_id: string;
   title: string;
   icon_path: IconPath;
   content: string;
@@ -192,7 +192,7 @@ const Content = () => {
         cloudinary_url: ""
        }));
 
-      const user_id = 1;
+      const user_id = await DatabaseService.getUserId();
 
       const post_date = receiveDate.toISOString();
 
@@ -208,9 +208,16 @@ const Content = () => {
       await DatabaseService.createPost(postData);
 
       setImages([]);
+      console.warn("1")
       setTitle("");
+      console.warn("2")
+
       setContent("");
+      console.warn("3")
+
       router.replace("(homepage)/HomeScreen");
+      console.warn("4")
+
     } catch (error) {
       console.error("Error in handleSubmit: ", error);
       Alert.alert("Failed to create post. Please try again.");

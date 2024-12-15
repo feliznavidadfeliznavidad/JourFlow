@@ -48,6 +48,7 @@ namespace JourFlow_BE.Controllers
                     Console.WriteLine("Register new User");
                     var refreshToken = await _services.GenerateRefreshToken(payload!.Email);
                     var userToDB = new Users {
+                        Id = Guid.NewGuid(),
                         Email = payload!.Email,
                         RefreshToken = refreshToken,
                         AvtUrl = payload!.Picture,
@@ -60,11 +61,12 @@ namespace JourFlow_BE.Controllers
                     Console.WriteLine(userToDB.AvtUrl);
                     Console.WriteLine(userToDB.UserName);
 
-                    await _dbContext.Users.AddRangeAsync(userToDB);
+                    await _dbContext.Users!.AddRangeAsync(userToDB);
                     await _dbContext.SaveChangesAsync();
                     var token = _services.GenerateJWT(userToDB); 
                     return Ok(new {
                         message = "Register new User successfully",
+                        userId = userToDB.Id,
                         token,
                         userToDB.RefreshToken
                     });
@@ -72,6 +74,7 @@ namespace JourFlow_BE.Controllers
                     var token = _services.GenerateJWT(currentUser);
                     var refreshToken = await _services.GenerateRefreshToken(payload.Email);
                     return Ok(new { 
+                        userId = currentUser.Id,
                         token,
                         refreshToken
                     }); 
@@ -85,7 +88,7 @@ namespace JourFlow_BE.Controllers
         [HttpPost("update-jwt/{refreshToken}")]
         public async Task<IActionResult> UpdateJWT(string refreshToken)
         {
-            var current_user = await _dbContext.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
+            var current_user = await _dbContext.Users!.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
             if (current_user == null)
             {
                 return NotFound();

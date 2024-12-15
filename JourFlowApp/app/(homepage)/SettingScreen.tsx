@@ -48,9 +48,11 @@ const SettingScreen = () => {
 
   const handleBackup = async () => {
     try {
+        const userId = await DatabaseService.getUserId();
+        console.log(`userId: ${userId}`);
         console.log("Starting backup process...");
         const not_sync_posts = await DatabaseService.getNotSyncPosts();
-        console.log(`not_sync_posts.length: ${not_sync_posts.length}`);
+        const not_sync_images = await DatabaseService.getNotSyncImages();
 
         const new_update_posts = await DatabaseService.getUpdatedPosts();
         console.log(`new_update_posts.length: ${new_update_posts.length}`);
@@ -58,17 +60,23 @@ const SettingScreen = () => {
         const delete_posts = await DatabaseService.getDeletePosts();
         console.log(`delete_posts.length: ${delete_posts.length}`);
 
-        const unsynced_images = await DatabaseService.getUnsyncedImages();
-        console.log(`unsynced_images.length: ${unsynced_images.length}`);
+
 
         console.log("Fetching posts from SyncDbService...");
-        await SyncDbService.getPosts();
+        await SyncDbService.getPosts(userId);
         console.log("Fetched posts successfully.");
 
         if (not_sync_posts.length > 0) {
             console.log("Adding unsynced posts...");
             await SyncDbService.addPosts(not_sync_posts);
             console.log("Unsynced posts added.");
+        }
+
+        if (not_sync_images.length > 0) {
+            console.log("Adding unsynced images...");
+            console.log(`not_sync_images: ${JSON.stringify(not_sync_images)}`);
+            await SyncDbService.addImages(not_sync_images);
+            console.log("Unsynced images added.");
         }
 
         if (new_update_posts.length > 0) {
@@ -81,12 +89,6 @@ const SettingScreen = () => {
             console.log("Deleting posts...");
             await SyncDbService.deletePosts(delete_posts);
             console.log("Posts deleted.");
-        }
-
-        if (unsynced_images.length > 0) {
-            console.log("Syncing images...");
-            await SyncDbService.syncImages(unsynced_images);
-            console.log("Images synced.");
         }
 
         console.log("Backup process completed successfully.");

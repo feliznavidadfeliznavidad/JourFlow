@@ -31,23 +31,59 @@ namespace JourFlow_BE.Controllers
         //     return Ok(posts);
         // }
 
-        [HttpGet("get")]
-        public IActionResult GetAll()
+        [HttpGet("get/{userId}")]
+        public IActionResult GetPostsByUserId([FromHeader] Guid userId)
         {
-            var posts = _dbcontext.Posts?.Select(p => p.ToGetPosts()).ToList();
-            var images = _dbcontext.IMGs?.Select(i => i.ToImageDto()).ToList();
+            var posts = (from post in _dbcontext.Posts 
+                        join imgs in _dbcontext.IMGs! on post.Id equals imgs.PostId 
+                        where post.UserId == userId 
+                        select post).Select(p => p.ToGetPosts()).ToList();
+            var images = (from imgs in _dbcontext.IMGs 
+                        join post in _dbcontext.IMGs! on imgs.PostId equals post.Id 
+                        where imgs.Posts!.UserId == userId 
+                        select imgs).Select(i => i.ToImageDto()).ToList();
+           
 
             if (posts == null)
             {
                 return NotFound();
             }
 
-            return Ok(new { posts, images });
+            return Ok(new { posts , images });
         }
 
-        [HttpPost("add")]
-        public async Task<IActionResult> AddPost([FromBody] List<PostsDto> posts)
+        [HttpPost("add-image")]
+        public async Task<IActionResult> AddImage([FromBody] List<ImgsDto>  images)
         {
+            Console.WriteLine("AddImages");
+            if (images == null || !images.Any())
+            {
+                Console.WriteLine("No images provided");
+                return BadRequest("No images provided");
+            }
+
+            Console.WriteLine($"Received {images.Count} posts.");
+
+
+            var newImgs = images
+                .Where(i => i.sync_status == 0)
+                .Select(dto => dto.ToImage())
+                .ToList();
+
+
+            Console.WriteLine($"Filtered {newImgs.Count} imgs with sync_status == 0.");
+
+
+            _dbcontext.IMGs!.AddRange(newImgs);
+            await _dbcontext.SaveChangesAsync();
+
+            return Ok("success");
+        }
+        [HttpPost("add-post")]
+        public async Task<IActionResult> AddPost([FromBody] List<PostsDto>  posts)
+        {
+            Console.WriteLine("AddPosts");
+
             if (posts == null || !posts.Any())
             {
                 Console.WriteLine("No posts provided");
@@ -56,53 +92,19 @@ namespace JourFlow_BE.Controllers
 
             Console.WriteLine($"Received {posts.Count} posts.");
 
+
             var newPosts = posts
                 .Where(p => p.sync_status == 0)
                 .Select(dto => dto.ToAddPosts())
                 .ToList();
 
+
             Console.WriteLine($"Filtered {newPosts.Count} posts with sync_status == 0.");
 
-            var validPosts = new List<Posts>(); // Danh sách bài viết hợp lệ
-            var skippedPosts = new List<string>(); // Danh sách Id bị bỏ qua
-
-            foreach (var post in newPosts)
-            {
-                var existingPost = await _dbcontext.Posts
-                    .FirstOrDefaultAsync(p => p.Id == post.Id);
-
-                if (existingPost != null)
-                {
-                    skippedPosts.Add(post.Id.ToString()); // Thêm vào danh sách bỏ qua
-                    Console.WriteLine($"Post with Id {post.Id} already exists. Skipping.");
-                }
-                else
-                {
-                    validPosts.Add(post); // Thêm vào danh sách hợp lệ
-                }
-            }
-
-            if (validPosts.Any())
-            {
-                try
-                {
-                    await _dbcontext.Posts!.AddRangeAsync(validPosts);
-                    await _dbcontext.SaveChangesAsync();
-                    Console.WriteLine($"Added {validPosts.Count} valid posts to the database.");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error saving posts to database: {ex.Message}");
-                    return StatusCode(500, $"Internal server error: {ex.Message}");
-                }
-            }
-            else
-            {
-                Console.WriteLine("No valid posts to add.");
-            }
+            _dbcontext.Posts!.AddRange(newPosts);
+            await _dbcontext.SaveChangesAsync();
 
             return Ok("success");
-
         }
 
         [HttpPut("update")]
@@ -142,115 +144,36 @@ namespace JourFlow_BE.Controllers
             return Ok("success");
         }
 
-        // [HttpDelete("delete")]
-        // public async Task<IActionResult> DeletePosts([FromBody] List<PostsDto> posts)
-        // {
-        //     if (posts == null || !posts.Any())
-        //         return BadRequest("No posts provided.");
-
-        //     // Lấy danh sách Ids từ posts gửi lên
-        //     var idsToDelete = posts
-        //         .Where(p => p.sync_status == 3) // Chỉ lấy các bài viết có sync_status = 3
-        //         .Select(p => p.id)
-        //         .ToList();
-
-        //     if (!idsToDelete.Any())
-        //         return BadRequest("No posts with sync_status = 3 provided.");
-
-        //     // Lấy các bài viết từ database có Id khớp
-        //     var postsToDelete = await _dbcontext!.Posts!
-        //         .Where(p => idsToDelete.Contains(p.Id))
-        //         .ToListAsync();
-
-        //     if (!postsToDelete.Any())
-        //         return NotFound("No matching posts found in the database.");
-
-        //     // Xóa các bài viết
-        //     _dbcontext!.Posts!.RemoveRange(postsToDelete);
-        //     await _dbcontext.SaveChangesAsync();
-
-        //     return Ok("success");
-        // }
-
         [HttpDelete("delete")]
         public async Task<IActionResult> DeletePosts([FromBody] List<PostsDto> posts)
         {
             if (posts == null || !posts.Any())
                 return BadRequest("No posts provided.");
 
+            // Lấy danh sách Ids từ posts gửi lên
             var idsToDelete = posts
-                .Where(p => p.sync_status == 3)
+                .Where(p => p.sync_status == 3) // Chỉ lấy các bài viết có sync_status = 3
                 .Select(p => p.id)
                 .ToList();
 
             if (!idsToDelete.Any())
                 return BadRequest("No posts with sync_status = 3 provided.");
 
-            try
-            {
-                // Xóa images trước
-                var imagesToDelete = await _dbcontext.IMGs!
-                    .Where(i => idsToDelete.Contains(i.PostId))
-                    .ToListAsync();
+            // Lấy các bài viết từ database có Id khớp
+            var postsToDelete = await _dbcontext!.Posts!
+                .Where(p => idsToDelete.Contains(p.Id))
+                .ToListAsync();
 
-                if (imagesToDelete.Any())
-                {
-                    _dbcontext.IMGs!.RemoveRange(imagesToDelete);
-                }
+            if (!postsToDelete.Any())
+                return NotFound("No matching posts found in the database.");
 
-                // Sau đó xóa posts
-                var postsToDelete = await _dbcontext.Posts!
-                    .Where(p => idsToDelete.Contains(p.Id))
-                    .ToListAsync();
+            // Xóa các bài viết
+            _dbcontext!.Posts!.RemoveRange(postsToDelete);
+            await _dbcontext.SaveChangesAsync();
 
-                if (!postsToDelete.Any())
-                    return NotFound("No matching posts found in the database.");
-
-                _dbcontext.Posts!.RemoveRange(postsToDelete);
-                await _dbcontext.SaveChangesAsync();
-
-                return Ok("success");
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            return Ok("success");
         }
 
-        [HttpPost("sync-images")]
-        public async Task<IActionResult> SyncImages([FromBody] List<ImgsDto> images)
-        {
-            if (images == null || !images.Any())
-                return BadRequest("No images provided");
-
-            try
-            {
-                foreach (var imageDto in images)
-                {
-                    var existingImage = await _dbcontext.IMGs!
-                        .FirstOrDefaultAsync(i => i.Id == imageDto.id);
-
-                    if (existingImage == null)
-                    {
-                        var newImage = imageDto.ToImage();
-                        await _dbcontext.IMGs!.AddAsync(newImage);
-                    }
-                    else
-                    {
-                        existingImage.Url = imageDto.url;
-                        existingImage.PublicId = imageDto.public_id;
-                        existingImage.CloudinaryUrl = imageDto.cloudinary_url;
-                        existingImage.SyncStatus = 1;
-                    }
-                }
-
-                await _dbcontext.SaveChangesAsync();
-                return Ok("success");
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
-        }
+               
     }
 }
