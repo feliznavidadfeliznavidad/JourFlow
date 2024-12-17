@@ -9,6 +9,8 @@ import {
   TouchableOpacity,
   Pressable,
   Alert,
+  ScrollView,
+  RefreshControl,
 } from "react-native";
 import LottieView from "lottie-react-native";
 import AntDesign from "@expo/vector-icons/AntDesign";
@@ -50,17 +52,17 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
   const [markedDates, setMarkedDates] = useState<MarkedDates>({});
   const today = useMemo(() => new Date(), []);
   const [isToday, setIsToday] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Centralized error handling
   const handleError = useCallback((error: unknown, context: string) => {
-
+    console.error(`Error while ${context}:`, error);
     Alert.alert("Error", `An error occurred while ${context}`);
   }, []);
 
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // await DatabaseService.insertFakeUser(); // Insert clone user data for testing
         await loadMarkedDates();
         await checkTodayEntry();
       } catch (error) {
@@ -185,7 +187,6 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
       const formattedDate = postDate.toISOString();
 
       DatabaseService.hasPostsOnDate(postDate)
-        // DatabaseService.existingDateOfPost(postDate)
         .then((exists) => {
           if (exists) {
             // Navigate to detail screen if post already exists
@@ -210,7 +211,6 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
   const checkTodayEntry = useCallback(async () => {
     try {
       const exists = await DatabaseService.hasPostsOnDate(today);
-      // const exists = await DatabaseService.existingDateOfPost(today);
       setIsToday(!exists);
     } catch (error) {
       handleError(error, "checking today's entry");
@@ -232,69 +232,82 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
     []
   );
 
+  // Handle refresh
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadMarkedDates();
+      await checkTodayEntry();
+    } catch (error) {
+      handleError(error, "refreshing data");
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadMarkedDates, checkTodayEntry, handleError]);
+
   // Navigation to settings
   const handleSettingPress = useCallback(() => {
     router.push("SettingScreen");
   }, []);
 
-  
-
   return (
-    <View style={styles.container}>
-      {/* Header with settings icon */}
-      <View style={styles.header}>
-        <Pressable onPress={handleSettingPress}>
-          <AntDesign name="setting" size={24} color="black" />
-        </Pressable>
-      </View>
-
-      {/* Calendar Component */}
-      <View style={styles.calendar}>
-        <Calendar
-          theme={calendarTheme}
-          initialDate={today.toISOString().slice(0, 10)}
-          onDayPress={(day: DateData) =>
-            handleDayPress(new Date(day.timestamp))
-          }
-          firstDay={0}
-          hideExtraDays={true}
-          markedDates={markedDates}
-          dayComponent={(props: DayComponentProps) => (
-            <DayComponent {...props} />
-          )}
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={[colors.textInLight]}
+          tintColor={colors.textInLight}
         />
-      </View>
+      }
+    >
+      <View>
+        {/* Header with settings icon */}
+        <View style={styles.header}>
+          <Pressable onPress={handleSettingPress}>
+            <AntDesign name="setting" size={24} color="black" />
+          </Pressable>
+        </View>
 
-      {/* Debug Button for Adding Posts */}
-      {/* <Pressable 
-        style={styles.button} 
-        onPress={printData}
-      >
-        <Text style={styles.buttonText}>Add + Print Data</Text>
-      </Pressable> */}
+        {/* Calendar Component */}
+        <View style={styles.calendar}>
+          <Calendar
+            theme={calendarTheme}
+            initialDate={today.toISOString().slice(0, 10)}
+            onDayPress={(day: DateData) =>
+              handleDayPress(new Date(day.timestamp))
+            }
+            firstDay={0}
+            hideExtraDays={true}
+            markedDates={markedDates}
+            dayComponent={(props: DayComponentProps) => (
+              <DayComponent {...props} />
+            )}
+          />
+        </View>
 
-      {/* Submit Button for Today's Entry */}
-      <View style={styles.submitContainer}>
-        <TouchableOpacity
-          style={[styles.submitButton, { opacity: isToday ? 1 : 0.2 }]}
-          onPress={() => handleDayPress(today)}
-          disabled={!isToday}
-        >
-          <AntDesign name="plus" size={24} color="black" />
-        </TouchableOpacity>
+        {/* Submit Button for Today's Entry */}
+        <View style={styles.submitContainer}>
+          <TouchableOpacity
+            style={[styles.submitButton, { opacity: isToday ? 1 : 0.2 }]}
+            onPress={() => handleDayPress(today)}
+            disabled={!isToday}
+          >
+            <AntDesign name="plus" size={24} color="black" />
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    </ScrollView>
   );
 };
 
-export default React.memo(CustomCalendar);
-
-// Styles remain mostly the same
 const { width } = Dimensions.get("window");
 
 const styles = StyleSheet.create({
   container: {
     backgroundColor: "#FAF7F0",
+    flex: 1,
   },
   header: {
     padding: 16,
@@ -304,17 +317,6 @@ const styles = StyleSheet.create({
   },
   calendar: {
     padding: 10,
-  },
-  button: {
-    backgroundColor: colors.backgroundDark,
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "white",
-    fontFamily: "kalam",
-    fontSize: 16,
   },
   dayContainer: {
     alignItems: "center",
@@ -341,6 +343,7 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     marginTop: 100,
+    marginBottom: 20,
   },
   submitButton: {
     height: 50,
@@ -352,3 +355,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
 });
+
+export default React.memo(CustomCalendar);
