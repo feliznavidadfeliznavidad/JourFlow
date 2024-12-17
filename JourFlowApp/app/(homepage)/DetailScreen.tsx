@@ -108,7 +108,8 @@ const Content = () => {
         cloudinary_url: ""
        }));
 
-      const updateData = { title, content, images };
+      // const updateData = { title, content, images };
+      const updateData = { title, content};
 
       if (currentPostId) {
         await DatabaseService.updatePost(currentPostId, updateData);
