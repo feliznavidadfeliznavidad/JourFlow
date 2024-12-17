@@ -67,6 +67,9 @@ namespace JourFlow_BE.Controllers
                     return Ok(new {
                         message = "Register new User successfully",
                         userId = userToDB.Id,
+                        userName = userToDB.UserName,
+                        email = userToDB.Email,
+                        avaUrl = userToDB.AvtUrl,
                         token,
                         userToDB.RefreshToken
                     });
@@ -76,6 +79,9 @@ namespace JourFlow_BE.Controllers
                     Console.WriteLine("Current User" + currentUser?.Id);
                     return Ok(new { 
                         userId = currentUser?.Id,
+                        userName = currentUser?.UserName,
+                        email = currentUser?.Email,
+                        avaUrl = currentUser?.AvtUrl,
                         token,
                         refreshToken
                     }); 
