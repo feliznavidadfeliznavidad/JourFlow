@@ -1,10 +1,11 @@
-import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { IconPath } from "../../assets/icon/icon";
 import DatabaseService from "../services/database_service";
 import { router } from "expo-router";
 import Card from "../components/Card";
+import Feather from "@expo/vector-icons/Feather";
 
 interface Post {
   id: string;
@@ -28,7 +29,6 @@ const SearchScreen = () => {
       setOrgPosts(data);
       setFilterPosts(data);
     } catch (error) {
-
     }
   };
 
@@ -50,11 +50,17 @@ const SearchScreen = () => {
   return (
     <View style={styles.searchScreen}>
       <SafeAreaView>
-        <TextInput
-          style={styles.searchBar}
-          onChangeText={setSearchResult}
-          value={searchResult}
-        />
+        <View style={styles.searchHeader}>
+          <Pressable onPress={() => router.back()} style={styles.backButton}>
+            <Feather name="arrow-left" size={24} color="black" />
+          </Pressable>
+          <TextInput
+            style={styles.searchBar}
+            onChangeText={setSearchResult}
+            value={searchResult}
+            placeholder="Search..."
+          />
+        </View>
         <ScrollView style={styles.scroll}>
           {filterPosts.map((post, index) => {
             return (
@@ -79,17 +85,20 @@ const SearchScreen = () => {
   );
 };
 
-export default SearchScreen;
-
 const styles = StyleSheet.create({
   searchScreen: {
     flex: 1,
     backgroundColor: "#FAF7F0",
   },
-  searchBar: {
+  searchHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
     marginTop: 30,
+  },
+  searchBar: {
+    flex: 1,
     height: 50,
-    margin: 12,
     borderWidth: 1,
     paddingHorizontal: 10,
     borderRadius: 20,
@@ -103,4 +112,10 @@ const styles = StyleSheet.create({
   Container: {
     width: "100%",
   },
+  backButton: {
+    padding: 8,
+    marginRight: 8,
+  },
 });
+
+export default SearchScreen;

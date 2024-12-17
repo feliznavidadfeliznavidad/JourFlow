@@ -72,25 +72,61 @@ class SyncDbService {
       throw error;
     }
   }
+
   static async addImages(datas: Image[]): Promise<void> {
-
-    datas = await this.syncImages(datas);
-
-
-    await this.fetchWithErrorHandling(
-      `${SERVER_API}/add-image`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },  
-        body: JSON.stringify(datas),
-      }
-      
-    );
-    
-    await DatabaseService.updateImageSyncStatus();
+    try {
+      console.log("Initial datas:", datas); // Kiểm tra dữ liệu đầu vào
+  
+      // Gọi syncImages và log kết quả
+      datas = await this.syncImages(datas);
+      console.log("After syncImages, datas:", datas);
+  
+      // Log URL và body trước khi gọi API
+      const url = `${SERVER_API}/add-image`;
+      console.log("API URL:", url);
+      console.log("Request body:", JSON.stringify(datas));
+  
+      // Gọi fetchWithErrorHandling và log thông báo
+      await this.fetchWithErrorHandling(
+        url,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(datas),
+        },
+        "Posts added successfully!"
+      );
+      console.log("API call completed successfully!");
+  
+      // Gọi updateImageSyncStatus và log thông báo
+      await DatabaseService.updateImageSyncStatus();
+      console.log("Image sync status updated!");
+    } catch (error) {
+      console.error("Error in addImages:", error);
+    }
   }
+  
+  // static async addImages(datas: Image[]): Promise<void> {
+
+  //   datas = await this.syncImages(datas);
+
+
+  //   await this.fetchWithErrorHandling(
+  //     `${SERVER_API}/add-image`,
+  //     {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },  
+  //       body: JSON.stringify(datas),
+  //     },
+  //     "Posts added successfully!"
+  //   );
+
+  //   await DatabaseService.updateImageSyncStatus();
+  // }
   static async addPosts(datas: Post[]): Promise<void> {
 
 
