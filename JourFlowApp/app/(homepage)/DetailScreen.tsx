@@ -29,6 +29,7 @@ interface Post {
   content: string;
   post_date: string;
   update_date: string;
+  sync_status: number;
 }
 
 const Content = () => {
@@ -50,11 +51,6 @@ const Content = () => {
   const iconFromParams = params.icon;
 
   const receiveDate = new Date(formattedDate);
-  const { status } = useAuthorization();
-
-  useEffect(() => {
-    console.log("rom detail screen: ", status);
-  }, [status]);
 
   const checkExists = async () => {
     try {
@@ -88,7 +84,7 @@ const Content = () => {
         setCurrentIcon(iconFromParams || "normal");
       }
     } catch (error) {
-      console.error("Error in checkExists:", error);
+      throw error;
     }
   };
 
@@ -122,8 +118,8 @@ const Content = () => {
         await checkExists();
       }
     } catch (error) {
-      console.error("Error in handleUpdate: ", error);
       Alert.alert("Error", "Failed to update post. Please try again.");
+      throw error;
     }
   };
 
@@ -135,8 +131,8 @@ const Content = () => {
         router.replace("(homepage)/HomeScreen");
       }
     } catch (error) {
-      console.error("Error in handleDelete: ", error);
       Alert.alert("Error", "Failed to delete post. Please try again.");
+      throw error;
     }
   };
 
@@ -156,7 +152,7 @@ const Content = () => {
         setImages((prevImages) => [...prevImages, ...selectedImages]);
       }
     } catch (error) {
-      console.error("Error picking image:", error);
+      throw error;
     }
   };
 
@@ -193,15 +189,12 @@ const Content = () => {
         cloudinary_url: ""
        }));
 
-      const user_id = await getItem("userId");
-
       const post_date = receiveDate.toISOString();
 
       const postData = {
         title,
         content,
         icon_path: currentIcon,
-        user_id,
         post_date,
         images: images,
       };
@@ -209,19 +202,15 @@ const Content = () => {
       await DatabaseService.createPost(postData);
 
       setImages([]);
-      console.warn("1")
       setTitle("");
-      console.warn("2")
 
       setContent("");
-      console.warn("3")
 
       router.replace("(homepage)/HomeScreen");
-      console.warn("4")
 
     } catch (error) {
-      console.error("Error in handleSubmit: ", error);
       Alert.alert("Failed to create post. Please try again.");
+      throw error;
     }
   };
 

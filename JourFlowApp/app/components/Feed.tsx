@@ -15,12 +15,13 @@ import { router, usePathname } from "expo-router";
 
 interface Post {
   id: string;
-  user_id: number;
+  user_id: string;
   title: string;
   icon_path: IconPath;
   content: string;
   post_date: string;
   update_date: string;
+  sync_status: number;
 }
 
 const Feed = () => {
@@ -31,7 +32,7 @@ const Feed = () => {
       const data = await DatabaseService.getPosts();
       setPosts(data);
     } catch (error) {
-      console.error("Error fetching posts:", error);
+      throw error;
     }
   };
 
@@ -73,6 +74,7 @@ const Feed = () => {
                   icon_path={post.icon_path}
                   content={post.content}
                   post_date={post.post_date}
+                  sync_status={post.sync_status}
                   update_date={post.update_date}
                   onDelete={handlePostDelete}
                 />

@@ -12,7 +12,7 @@ public static class ImageMapper
             url = image.Url,
             public_id = image.PublicId,
             cloudinary_url = image.CloudinaryUrl,
-            sync_status = image.SyncStatus
+            sync_status = 1
         };
     }
 
@@ -25,7 +25,6 @@ public static class ImageMapper
             Url = dto.url,
             PublicId = dto.public_id,
             CloudinaryUrl = dto.cloudinary_url,
-            SyncStatus = dto.sync_status
         };
     }
 }

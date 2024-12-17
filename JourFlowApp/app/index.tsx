@@ -15,7 +15,6 @@ export default function Page() {
     const folderInfo = await FileSystem.getInfoAsync(folderUri);
     if (!folderInfo.exists) {
       await FileSystem.makeDirectoryAsync(folderUri, { intermediates: true });
-      console.log("Folder created at: " + folderUri);
     }
   };
 

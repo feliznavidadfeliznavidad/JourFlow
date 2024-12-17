@@ -35,19 +35,17 @@ export const AuthProvider = (props: any) => {
   });
 
   React.useEffect(() => {
-    console.log("AuthProvider mounted");
     const initState = async () => {
       try {
         const authToken = await getItem("token");
         const userId = await getItem("userId");
-        console.log("Token retrieved during initialization:", authToken);
         if (authToken !== null && userId !== null) {
           dispatch({ type: "SIGN_IN", token: authToken, userId: userId });
         } else {
           dispatch({ type: "SIGN_OUT" });
         }
       } catch (e) {
-        console.log(e);
+        throw e;
       }
     };
     initState();
@@ -55,7 +53,6 @@ export const AuthProvider = (props: any) => {
   const actions = React.useMemo(
     () => ({
       signIn: async (token: string, userId: string) => {
-        console.log("signIn function called");
         await setItem("token", token); // Save the token first
         await setItem("userId", userId);
         dispatch({ type: "SIGN_IN", token }); // Then update the state

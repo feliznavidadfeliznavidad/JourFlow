@@ -8,12 +8,13 @@ import Card from "../components/Card";
 
 interface Post {
   id: string;
-  user_id: number;
+  user_id: string;
   title: string;
   icon_path: IconPath;
   content: string;
   post_date: string;
   update_date: string;
+  sync_status: number;
 }
 
 const SearchScreen = () => {
@@ -27,7 +28,7 @@ const SearchScreen = () => {
       setOrgPosts(data);
       setFilterPosts(data);
     } catch (error) {
-      console.error("Error fetching posts:", error);
+
     }
   };
 
@@ -65,6 +66,7 @@ const SearchScreen = () => {
                   title={post.title}
                   icon_path={post.icon_path}
                   content={post.content}
+                  sync_status={post.sync_status}
                   post_date={post.post_date}
                   update_date={post.update_date}
                 />

@@ -40,13 +40,9 @@ const LoginScreen = () => {
     const initState = async () => {
       // const authToken = await getItem("token");
       await removeItem("token");
-      // console.log(
-      //   "Token retrieved during initialization from login:",
-      //   authToken
-      // );
     };
     initState();
-    // console.log("status from Login Screen:  ", status);
+
   }, [status]);
 
   WebBrowser.maybeCompleteAuthSession();
@@ -66,9 +62,9 @@ const LoginScreen = () => {
       }),
     });
     if (response.ok) {
-      // console.log("response status of posting to server: ", response.status);
+
       const userIdentity = await response.json();
-      // console.log("JWT from server: ", userIdentity.token);
+
       await signIn( userIdentity.token, userIdentity.userId);
       await router.replace({
         pathname: "(homepage)/HomeScreen",
@@ -76,22 +72,22 @@ const LoginScreen = () => {
 
       router.push("(homepage)/HomeScreen");
       const isUser = await DatabaseService.checkExistingUser(userIdentity.userId);
-      // console.log("userIdentity.userId: ", isUser);
+
       if (!isUser) {
         DatabaseService.insertDynamicUser(
           userIdentity.userId,
           userIdentity.userName,
           userIdentity.token,
           googleToken,
-          userIdentity.refreshToken
+          userIdentity.refreshToken,
+          userIdentity.email,
+          userIdentity.avtUrl
         );
       } else {
-        // console.log("JWT FROM SERVER IN ELSE CONDITION: ", userIdentity.token);
+
         DatabaseService.updateJWT(userIdentity.token, userIdentity.userId);
       }
       await SyncDbService.getPosts(userIdentity.userId);
-    } else {
-      console.log("something wrong");
     }
   };
   const handleToken = () => {
@@ -99,7 +95,6 @@ const LoginScreen = () => {
       const { authentication } = response;
       const token = authentication?.idToken;
       handleJWT(token);
-      // console.log("idToken: ", token);
     }
   };
   useEffect(() => {

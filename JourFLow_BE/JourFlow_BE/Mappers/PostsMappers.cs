@@ -32,7 +32,8 @@ namespace JourFlow_BE.Mappers
                 icon_path = posts.IconPath,
                 content = posts.Content,
                 post_date = posts.PostDate,
-                update_date = posts.UpdateDate
+                update_date = posts.UpdateDate,
+                sync_status = 1
             };
         }
 

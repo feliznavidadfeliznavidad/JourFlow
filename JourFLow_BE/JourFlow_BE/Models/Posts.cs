@@ -25,7 +25,7 @@ namespace JourFlow_BE.Models
         [Required]
         public DateTime? UpdateDate { get; set; }  
         public Users? User { get; set; }
-        public ICollection<IMGs>? IMGs { get; set; }
+        public ICollection<IMGs>? IMGs { get; set; } = new List<IMGs>();
 
     }
 }
