@@ -24,7 +24,7 @@ const WelComeScreen = () => {
         pathname: "(homepage)/HomeScreen",
       });
     }
-    console.log("status from welcomePage: ", status);
+
   }, [status]);
   const onPressIn = () => {
     Animated.spring(scaleAnim, {

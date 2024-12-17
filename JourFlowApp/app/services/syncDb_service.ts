@@ -3,6 +3,7 @@ import { IconPath } from "../../assets/icon/icon";
 import DatabaseService from "./database_service";
 import { uploadImageToCloudinary } from "./CloudinaryService";
 import post_status from "../../assets/post_status";
+import { getItem } from "./async_storage";
 
 const SERVER_API = "http://localhost:5004/api/posts";
 
@@ -30,7 +31,6 @@ class SyncDbService {
   private static async fetchWithErrorHandling(
     url: string,
     options: RequestInit,
-    successMessage?: string
   ): Promise<string | null> {
     try {
       const response = await fetch(url, options);
@@ -42,15 +42,12 @@ class SyncDbService {
       const data = await response.text();
 
       if (data === "success") {
-        if (successMessage) {
-          Alert.alert("Success", successMessage);
-        }
         return data;
       }
 
       throw new Error("Unexpected server response");
     } catch (error) {
-      console.error("Network or server error:", error);
+
       Alert.alert("Error", "An error occurred while syncing data");
       throw error;
     }
@@ -65,13 +62,12 @@ class SyncDbService {
       const data = await response.json();
       const { posts, images } = data;
 
-      await DatabaseService.addSyncPosts(posts);
-      if (images && images.length > 0) {
-        await DatabaseService.syncServerImages(images);
-      }
-      console.log("Fetched posts and images:", data);
+      await DatabaseService.syncDatas(posts, images);
+
+
+
     } catch (error) {
-      console.error("Error fetching posts and images:", error);
+
       Alert.alert("Sync Error", "Failed to fetch posts and images");
       throw error;
     }
@@ -89,10 +85,10 @@ class SyncDbService {
           "Content-Type": "application/json",
         },  
         body: JSON.stringify(datas),
-      },
-      "Posts added successfully!"
+      }
+      
     );
-
+    
     await DatabaseService.updateImageSyncStatus();
   }
   static async addPosts(datas: Post[]): Promise<void> {
@@ -106,8 +102,8 @@ class SyncDbService {
           "Content-Type": "application/json",
         },  
         body: JSON.stringify(datas),
-      },
-      "Posts added successfully!"
+      }
+      
     );
 
     await DatabaseService.finishSyncAdd();
@@ -122,8 +118,7 @@ class SyncDbService {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(posts),
-      },
-      "Posts updated successfully!"
+      }
     );
 
     await DatabaseService.finishSyncUpdate();
@@ -138,8 +133,7 @@ class SyncDbService {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(posts),
-      },
-      "Posts deleted successfully!"
+      }
     );
 
     await DatabaseService.finishSyncDelete();
@@ -170,7 +164,6 @@ class SyncDbService {
               cloudinary_url: cloudinaryUrl,
             });
           } else {
-            console.warn(`Failed to upload image: ${image.id}`);
             syncedImages.push(image);
           }
         } else {
@@ -179,8 +172,7 @@ class SyncDbService {
       }
 
       return syncedImages;
-    } catch (error) {
-      console.error("Error in syncImages:", error);
+    } catch (error) { 
       Alert.alert("Sync Error", "Failed to sync images");
       throw error;
     }

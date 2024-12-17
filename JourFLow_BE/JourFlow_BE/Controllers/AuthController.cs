@@ -69,7 +69,7 @@ namespace JourFlow_BE.Controllers
                         userId = userToDB.Id,
                         userName = userToDB.UserName,
                         email = userToDB.Email,
-                        avaUrl = userToDB.AvtUrl,
+                        avtUrl = userToDB.AvtUrl,
                         token,
                         userToDB.RefreshToken
                     });
@@ -81,7 +81,7 @@ namespace JourFlow_BE.Controllers
                         userId = currentUser?.Id,
                         userName = currentUser?.UserName,
                         email = currentUser?.Email,
-                        avaUrl = currentUser?.AvtUrl,
+                        avtUrl = currentUser?.AvtUrl,
                         token,
                         refreshToken
                     }); 

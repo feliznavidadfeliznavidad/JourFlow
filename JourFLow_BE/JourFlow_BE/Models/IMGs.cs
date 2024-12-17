@@ -17,7 +17,6 @@ namespace JourFlow_BE.Models
         public string? Url { get; set; }
         public string? PublicId { get; set; }
         public string? CloudinaryUrl { get; set; }
-        public int? SyncStatus { get; set; }
         public Posts? Posts{ get; set; }
         
     }

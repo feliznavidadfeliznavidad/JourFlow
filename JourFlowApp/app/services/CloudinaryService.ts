@@ -18,7 +18,6 @@ interface CloudinaryFormData {
 export const uploadImageToCloudinary = async (
   imageUri: string
 ): Promise<string | null> => {
-  console.warn("cloud name: ", CLOUDINARY_CLOUD_NAME);
   try {
     const formData = new FormData();
     const imageData: CloudinaryFormData = {
@@ -35,11 +34,6 @@ export const uploadImageToCloudinary = async (
     );
     return response.data.secure_url;
   } catch (error) {
-    const axiosError = error as AxiosError;
-    console.error(
-      "Cloudinary upload failed:",
-      axiosError.response?.data || axiosError.message
-    );
-    return null;
+    throw error;
   }
 };

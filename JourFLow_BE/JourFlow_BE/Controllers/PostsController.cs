@@ -7,6 +7,7 @@ using JourFlow_BE.Mappers;
 using JourFlow_BE.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using NuGet.Protocol;
 
 namespace JourFlow_BE.Controllers
 {
@@ -20,29 +21,21 @@ namespace JourFlow_BE.Controllers
             _dbcontext = dbContext;
         }
 
-        // [HttpGet("get")]
-        // public IActionResult GetAll(){
-        //     var posts = _dbcontext.Posts?.Select(p => p.ToGetPosts()).ToList();
-
-        //     if (posts == null ){
-        //         return NotFound();
-        //     }
-
-        //     return Ok(posts);
-        // }
 
         [HttpGet("get/{userId}")]
-        public IActionResult GetPostsByUserId([FromHeader] Guid userId)
+        public IActionResult GetPostsByUserId([FromRoute] Guid userId)
         {
             var posts = (from post in _dbcontext.Posts 
                         join imgs in _dbcontext.IMGs! on post.Id equals imgs.PostId 
                         where post.UserId == userId 
                         select post).Select(p => p.ToGetPosts()).ToList();
             var images = (from imgs in _dbcontext.IMGs 
-                        join post in _dbcontext.IMGs! on imgs.PostId equals post.Id 
+                        join post in _dbcontext.Posts! on imgs.PostId equals post.Id 
                         where imgs.Posts!.UserId == userId 
                         select imgs).Select(i => i.ToImageDto()).ToList();
-           
+            Console.WriteLine("Posts: " + posts.ToJson());
+            Console.WriteLine("Images: " + images.ToJson());
+            
 
             if (posts == null)
             {

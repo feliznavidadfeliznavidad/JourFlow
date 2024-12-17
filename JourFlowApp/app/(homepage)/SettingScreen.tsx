@@ -1,5 +1,5 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import FontLoader from "../services/FontsLoader";
 import Feather from "@expo/vector-icons/Feather";
@@ -12,14 +12,32 @@ import SyncDbService from "../services/syncDb_service";
 import { useAuthorization } from "../services/AuthProvider";
 import { getItem } from "../services/async_storage";
 
+interface UserInfo{
+  username: string,
+  email: string,
+  avt_url: string,
+}
+
 const SettingScreen = () => {
-  const { status, signOut } = useAuthorization();
+  const { signOut } = useAuthorization();
+  const [userInfo, setUserInfo] = useState<UserInfo>();
+  
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
+
+  const fetchUserProfile = async () => {
+    try {
+      const data = await DatabaseService.getCurrentUserInfo();
+      setUserInfo(data);
+    } catch (error) {
+      throw error;
+    }
+  };
   const handlePress = () => {
     alert("Comming Soon!");
   };
-  useEffect(() => {
-    console.log("Status from setting screen: ", status);
-  }, [status]);
+
 
   const handleSignOutPress = () => {
     signOut();
@@ -32,73 +50,67 @@ const SettingScreen = () => {
       alert("All posts have been deleted successfully!");
     } catch (error: any) {
       alert(error.message);
-      console.error("Error deleting all posts:", error);
+      throw error;
     }
   };
 
   const handleLoadAllImgsPress = async () => {
     try {
       const data = await DatabaseService.getAllImages();
-      console.log(data);
-      alert("All images have been loaded successfully!");
+      console.log("images: ", data);
     } catch (error: any) {
       alert(error.message);
-      console.error("Error load:", error);
+      throw error;
     }
   };
 
   const handleBackup = async () => {
     try {
         const userId = await getItem("userId");
-        console.log(`userId: ${userId}`);
-        console.log("Starting backup process...");
         const not_sync_posts = await DatabaseService.getNotSyncPosts();
         const not_sync_images = await DatabaseService.getNotSyncImages();
 
         const new_update_posts = await DatabaseService.getUpdatedPosts();
-        console.log(`new_update_posts.length: ${new_update_posts.length}`);
+
 
         const delete_posts = await DatabaseService.getDeletePosts();
-        console.log(`delete_posts.length: ${delete_posts.length}`);
 
 
 
-        console.log("Fetching posts from SyncDbService...");
-        await SyncDbService.getPosts(userId);
-        console.log("Fetched posts successfully.");
+        if (delete_posts.length > 0) {
+          console.log("syncing delete posts");
+          console.log(delete_posts);
+          await SyncDbService.deletePosts(delete_posts);
+        }
 
         if (not_sync_posts.length > 0) {
-            console.log("Adding unsynced posts...");
-            await SyncDbService.addPosts(not_sync_posts);
-            console.log("Unsynced posts added.");
+          console.log("syncing posts");
+          console.log(not_sync_posts);
+          await SyncDbService.addPosts(not_sync_posts);
         }
 
         if (not_sync_images.length > 0) {
-            console.log("Adding unsynced images...");
-            console.log(`not_sync_images: ${JSON.stringify(not_sync_images)}`);
-            await SyncDbService.addImages(not_sync_images);
-            console.log("Unsynced images added.");
+          console.log("syncing images");
+          console.log(not_sync_images);
+          await SyncDbService.addImages(not_sync_images);
+
         }
 
         if (new_update_posts.length > 0) {
-            console.log("Updating posts...");
-            await SyncDbService.updatePosts(new_update_posts);
-            console.log("Posts updated.");
+          console.log("syncing update posts");
+          console.log(new_update_posts);
+          await SyncDbService.updatePosts(new_update_posts);
         }
 
-        if (delete_posts.length > 0) {
-            console.log("Deleting posts...");
-            await SyncDbService.deletePosts(delete_posts);
-            console.log("Posts deleted.");
-        }
+
+        await SyncDbService.getPosts(userId);
 
         alert("Backup process completed successfully.");
     } catch (error: any) {
         alert(error.message);
-        console.error("Error backing up database:", error);
-        console.log("Stack trace:", error.stack);
+        throw error;
     }
-};
+  };
 
 
   const printData = useCallback(async () => {
@@ -106,8 +118,7 @@ const SettingScreen = () => {
       const posts = await DatabaseService.getPosts();
       console.log("Posts:", posts);
 
-      // Optionally refresh marked dates after insertion
-      // await loadMarkedDates();
+
     } catch (error) {
       handleError(error, "printing data");
     }
@@ -150,17 +161,12 @@ const SettingScreen = () => {
             <View style={styles.profileContent}>
               <Image
                 style={styles.profileImage}
-                source={{ uri: "https://your-profile-image-url.com" }}
+                source={{ uri: userInfo?.avt_url }}
               />
               <View style={styles.profileInfo}>
-                <Text style={styles.username}>ByKimThe</Text>
+                <Text style={styles.username}>{userInfo?.username}</Text>
                 <View style={styles.zodiacContainer}>
-                  <MaterialCommunityIcons
-                    name="zodiac-leo"
-                    size={20}
-                    color="#9747FF"
-                  />
-                  <Text style={styles.zodiacText}>leo</Text>
+                  <Text style={styles.zodiacText}>{userInfo?.email}</Text>
                 </View>
               </View>
             </View>
@@ -209,10 +215,7 @@ const SettingScreen = () => {
 
             <Pressable
               style={styles.settingItem}
-              onPress={() => {
-                DatabaseService.getUsers();
-              }}
-            >
+              onPress={() => handlePress()}>
               <Feather name="lock" size={24} color="black" />
               <Text style={styles.settingText}>Lock Screen</Text>
             </Pressable>

@@ -15,13 +15,9 @@ export default function Page() {
   useEffect(() => {
     const initState = async () => {
       const authToken = await getItem("token");
-      console.log(
-        "Token retrieved during initialization from homescreen:",
-        authToken
-      );
     };
     initState();
-    console.log("status from homescreen: ", status);
+
   }, [status]);
 
   return (

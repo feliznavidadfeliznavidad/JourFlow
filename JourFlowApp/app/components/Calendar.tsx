@@ -53,7 +53,7 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
 
   // Centralized error handling
   const handleError = useCallback((error: unknown, context: string) => {
-    console.error(`Error in ${context}:`, error);
+
     Alert.alert("Error", `An error occurred while ${context}`);
   }, []);
 
@@ -237,19 +237,7 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
     router.push("SettingScreen");
   }, []);
 
-  // Debug method to insert and print posts
-  const printData = useCallback(async () => {
-    try {
-      await DatabaseService.insertFakePost();
-      const posts = await DatabaseService.getPosts();
-      console.log("Posts:", posts);
-
-      // Optionally refresh marked dates after insertion
-      await loadMarkedDates();
-    } catch (error) {
-      handleError(error, "printing data");
-    }
-  }, [handleError, loadMarkedDates]);
+  
 
   return (
     <View style={styles.container}>

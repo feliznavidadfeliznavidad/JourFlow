@@ -15,7 +15,7 @@ export const ImageList: React.FC<ImageListProps> = ({ images }) => {
         data={images}
         keyExtractor={(item, index) => item.uri + index.toString()}
         renderItem={({ item }) => (
-          <Image source={{ uri: item.uri }} style={{ width: 200, height: 200 }} />
+          <Image source={{ uri: item.uri ?? "https://s3v2.interdata.vn:9000/s3-586-15343-storage/dienthoaigiakho/wp-content/uploads/2024/01/16101418/trend-avatar-vo-danh-14.jpg"}} style={{ width: 200, height: 200 }} />
         )}
       />
     </View>

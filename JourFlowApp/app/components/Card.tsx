@@ -23,12 +23,13 @@ const { width, height } = Dimensions.get("window");
 
 interface Post {
   id: string;
-  user_id: number;
+  user_id: string;
   title: string;
   icon_path: IconPath;
   content: string;
   post_date: string;
   update_date: string;  
+  sync_status: number;
   onDelete?: () => void;
 }
 
@@ -57,7 +58,7 @@ const Card: React.FC<Post> = (post) => {
         setImgs(data);
       }
     } catch (error) {
-      console.error("Error fetching images by post id:", error);
+      throw error;
     }
   };
 
@@ -71,7 +72,6 @@ const Card: React.FC<Post> = (post) => {
   }, [post.id]);
 
   const handleDelete = async () => {
-    console.log("Deleting post:", post.id);
     try {
       if (post.id) {
         await DatabaseService.softDeletePost(post.id);
@@ -80,8 +80,8 @@ const Card: React.FC<Post> = (post) => {
         }
       }
     } catch (error) {
-      console.error("Error in handleDelete: ", error);
       Alert.alert("Error", "Failed to delete post. Please try again.");
+      throw error;
     }
   };
 
