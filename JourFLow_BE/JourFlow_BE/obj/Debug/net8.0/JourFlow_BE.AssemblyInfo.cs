@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("JourFlow_BE")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3da188639631293a315117681b060e44b3df5f96")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4cf12ffa31bf4bd4d45625a2fe46121c86f0d685")]
 [assembly: System.Reflection.AssemblyProductAttribute("JourFlow_BE")]
 [assembly: System.Reflection.AssemblyTitleAttribute("JourFlow_BE")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

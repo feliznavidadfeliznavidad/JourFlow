@@ -9080,19 +9080,19 @@
     ]
   },
   "packageFolders": {
-    "/Users/nhattoan/.nuget/packages/": {}
+    "/Users/macs/.nuget/packages/": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/nhattoan/Documents/HSU/mobileDev/JourFlow/JourFLow_BE/JourFlow_BE/JourFlow_BE.csproj",
+      "projectUniqueName": "/Users/macs/Documents/HSU/MobileDev/JourFlowTest2/JourFlow/JourFLow_BE/JourFlow_BE/JourFlow_BE.csproj",
       "projectName": "JourFlow_BE",
-      "projectPath": "/Users/nhattoan/Documents/HSU/mobileDev/JourFlow/JourFLow_BE/JourFlow_BE/JourFlow_BE.csproj",
-      "packagesPath": "/Users/nhattoan/.nuget/packages/",
-      "outputPath": "/Users/nhattoan/Documents/HSU/mobileDev/JourFlow/JourFLow_BE/JourFlow_BE/obj/",
+      "projectPath": "/Users/macs/Documents/HSU/MobileDev/JourFlowTest2/JourFlow/JourFLow_BE/JourFlow_BE/JourFlow_BE.csproj",
+      "packagesPath": "/Users/macs/.nuget/packages/",
+      "outputPath": "/Users/macs/Documents/HSU/MobileDev/JourFlowTest2/JourFlow/JourFLow_BE/JourFlow_BE/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/Users/nhattoan/.nuget/NuGet/NuGet.Config"
+        "/Users/macs/.nuget/NuGet/NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
@@ -9197,7 +9197,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.402/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.203/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

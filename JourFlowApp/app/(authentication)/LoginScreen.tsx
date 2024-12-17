@@ -22,8 +22,13 @@ import SyncDbService from "../services/syncDb_service";
 import uuid from "react-native-uuid";
 
 
+// const iosClientId =
+//   "1007829901637-oa4hla8287qmfrr42k272aq2bou7abvm.apps.googleusercontent.com";
+
+// iosClientId of David
 const iosClientId =
-  "1007829901637-oa4hla8287qmfrr42k272aq2bou7abvm.apps.googleusercontent.com";
+  "1007829901637-iif9lnnsfvtnmoddt5fr1h1mcrmb93po.apps.googleusercontent.com";
+  
   
 const { width, height } = Dimensions.get("window");
 const LoginScreen = () => {
