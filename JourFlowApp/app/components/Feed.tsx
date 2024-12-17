@@ -5,8 +5,10 @@ import {
   SafeAreaView,
   ScrollView,
   Pressable,
+  RefreshControl,
+  Alert,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Card from "./Card";
 import icons, { IconPath } from "../../assets/icon/icon";
 import DatabaseService from "../services/database_service";
@@ -26,70 +28,101 @@ interface Post {
 
 const Feed = () => {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const loadPosts = async () => {
+  // Centralized error handling
+  const handleError = useCallback((error: unknown, context: string) => {
+    console.error(`Error while ${context}:`, error);
+    Alert.alert("Error", `An error occurred while ${context}`);
+  }, []);
+
+  const loadPosts = useCallback(async () => {
     try {
       const data = await DatabaseService.getPosts();
       setPosts(data);
     } catch (error) {
-      throw error;
+      handleError(error, "loading posts");
     }
-  };
+  }, [handleError]);
 
-  const handlePressSearch = () => {
+  // Handle refresh
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadPosts();
+    } catch (error) {
+      handleError(error, "refreshing posts");
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadPosts, handleError]);
+
+  const handlePressSearch = useCallback(() => {
     router.push({
       pathname: "/SearchScreen",
     });
-  };
+  }, []);
 
-  const handlePostDelete = () => {
+  const handlePostDelete = useCallback(() => {
     loadPosts();
-  };
+  }, [loadPosts]);
 
   useEffect(() => {
     loadPosts();
-  }, []);
+  }, [loadPosts]);
+
   return (
-    <SafeAreaView>
+    <SafeAreaView style={styles.safeArea}>
       <View style={styles.feedContainer}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.backButton}>
             <Feather name="arrow-left" size={24} color="black" />
           </Pressable>
           <View style={styles.headerRight}>
-            <Pressable onPress={() => handlePressSearch()}>
+            <Pressable onPress={handlePressSearch}>
               <Feather name="search" size={24} color="black" />
             </Pressable>
           </View>
         </View>
-        <ScrollView style={styles.scroll}>
-          {posts.map((post, index) => {
-            return (
-              <View style={styles.Container} key={index}>
-                <Card
-                  key={index}
-                  id={post.id}
-                  user_id={post.user_id}
-                  title={post.title}
-                  icon_path={post.icon_path}
-                  content={post.content}
-                  post_date={post.post_date}
-                  sync_status={post.sync_status}
-                  update_date={post.update_date}
-                  onDelete={handlePostDelete}
-                />
-              </View>
-            );
-          })}
+        <ScrollView 
+          style={styles.scroll}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={["#000"]} // You can customize the loading spinner color
+              tintColor="#000" // For iOS
+            />
+          }
+        >
+          {posts.map((post, index) => (
+            <View style={styles.Container} key={post.id || index}>
+              <Card
+                id={post.id}
+                user_id={post.user_id}
+                title={post.title}
+                icon_path={post.icon_path}
+                content={post.content}
+                post_date={post.post_date}
+                sync_status={post.sync_status}
+                update_date={post.update_date}
+                onDelete={handlePostDelete}
+              />
+            </View>
+          ))}
+          {/* Add some bottom padding for better scrolling */}
+          <View style={styles.scrollPadding} />
         </ScrollView>
       </View>
     </SafeAreaView>
   );
 };
 
-export default Feed;
-
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#FAF7F0",
+  },
   Container: {
     width: "100%",
   },
@@ -112,6 +145,10 @@ const styles = StyleSheet.create({
   },
   scroll: {
     width: "100%",
+    flex: 1, // Add flex: 1 to ensure the ScrollView takes up remaining space
+  },
+  scrollPadding: {
+    height: 20, // Add some bottom padding for better scrolling experience
   },
   feedContainer: {
     height: "100%",
@@ -125,3 +162,5 @@ const styles = StyleSheet.create({
     borderBottomColor: "#333",
   },
 });
+
+export default Feed;
