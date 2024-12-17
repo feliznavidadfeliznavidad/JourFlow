@@ -28,7 +28,7 @@ interface Post {
   icon_path: IconPath;
   content: string;
   post_date: string;
-  update_date: string;  
+  update_date: string;
   sync_status: number;
   onDelete?: () => void;
 }
@@ -36,19 +36,31 @@ interface Post {
 interface Imgs {
   id: string;
   post_id: string;
-  url: string;
+  url?: string;
   public_id: string;
   cloudinary_url: string;
   sync_status: number;
 }
 
 const Card: React.FC<Post> = (post) => {
+  const defaultImage =
+    "https://s3v2.interdata.vn:9000/s3-586-15343-storage/dienthoaigiakho/wp-content/uploads/2024/01/16101418/trend-avatar-vo-danh-14.jpg";
   const [imgs, setImgs] = useState<Imgs[]>([]);
   const [isSwipeActive, setIsSwipeActive] = useState(false);
   const swipeableRef = useRef<Swipeable>(null);
   const timeoutRef = useRef<number>();
   const swipeStartTimeRef = useRef<number>(0);
   const dateString = new Date(post.post_date);
+
+  const getImageSource = (img: Imgs) => {
+    if (img.url) {
+      return img.url;
+    }
+    if (img.cloudinary_url) {
+      return img.cloudinary_url;
+    }
+    return defaultImage;
+  };
 
   const loadImgs = async () => {
     try {
@@ -92,14 +104,14 @@ const Card: React.FC<Post> = (post) => {
 
   const handleSwipeEnd = () => {
     const swipeDuration = Date.now() - swipeStartTimeRef.current;
-    
+
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
 
     // Điều chỉnh thời gian chờ dựa trên thời lượng swipe
     const delayTime = swipeDuration < 200 ? 500 : 100;
-    
+
     timeoutRef.current = setTimeout(() => {
       setIsSwipeActive(false);
     }, delayTime) as unknown as number;
@@ -108,7 +120,7 @@ const Card: React.FC<Post> = (post) => {
   const handlePress = () => {
     // Kiểm tra thêm thời gian từ khi bắt đầu swipe
     const timeSinceSwipeStart = Date.now() - swipeStartTimeRef.current;
-    
+
     if (!isSwipeActive && timeSinceSwipeStart > 200) {
       router.push({
         pathname: "DetailScreen",
@@ -177,9 +189,16 @@ const Card: React.FC<Post> = (post) => {
               {imgs.length > 0 && (
                 <View style={styles.imgContainer}>
                   <Image
-                    source={{ uri: imgs[0].url }}
+                    source={{ uri: getImageSource(imgs[0]) }}
                     style={styles.image}
                     resizeMode="cover"
+                    onError={() => {
+                      const updatedImgs = [...imgs];
+                      if (updatedImgs[0].url) {
+                        updatedImgs[0].url = undefined; 
+                        setImgs(updatedImgs);
+                      }
+                    }}
                   />
                 </View>
               )}
@@ -292,7 +311,7 @@ const styles = StyleSheet.create({
     marginVertical: 12,
     borderTopRightRadius: 12,
     borderBottomRightRadius: 12,
-    marginEnd: 20
+    marginEnd: 20,
   },
 });
 

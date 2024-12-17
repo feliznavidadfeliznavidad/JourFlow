@@ -36,7 +36,7 @@ const Content = () => {
   const [postData, setPostData] = useState<Post[]>([]);
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
-  const [images, setImages] = useState<{ uri: string }[]>([]);
+  const [images, setImages] = useState<{ uri: string, cloudinaryUrl?: string }[]>([]);
   const [existingPost, setExistingPost] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentPostId, setCurrentPostId] = useState<string | null>(null);
@@ -74,7 +74,10 @@ const Content = () => {
 
           const images = await DatabaseService.getPostImages(post[0].id);
           if (images && images.length > 0) {
-            const formattedImages = images.map((img) => ({ uri: img.url }));
+            const formattedImages = images.map((img) => ({ 
+              uri: img.url,
+              cloudinaryUrl: img.cloudinary_url || undefined
+            }));
             setImages(formattedImages);
           }
         }
@@ -103,11 +106,12 @@ const Content = () => {
     try {
       const savedImgPaths = await saveImgsToLocalStorage();
 
-      const images = savedImgPaths.map((url) => ({
-        url,
+      const images = savedImgPaths.map((img) => ({
+        url: img.url,
         public_id: "",
-        cloudinary_url: ""
-       }));
+        cloudinary_url: img.cloudinary_url || ""
+      }));
+  
 
       const updateData = { title, content, images };
 
@@ -145,10 +149,11 @@ const Content = () => {
         aspect: [1, 1],
         quality: 1,
       });
-
+  
       if (!result.canceled) {
         const selectedImages = result.assets.map((asset) => ({
           uri: asset.uri,
+          cloudinaryUrl: undefined // Ban đầu chưa có cloudinaryUrl
         }));
         setImages((prevImages) => [...prevImages, ...selectedImages]);
       }
@@ -159,22 +164,26 @@ const Content = () => {
 
   const saveImgsToLocalStorage = async () => {
     if (images.length === 0) return [];
-
+  
     const folderUri = `${FileSystem.documentDirectory}/UserSavedImages`;
     await FileSystem.makeDirectoryAsync(folderUri, { intermediates: true });
-
-    const imgLinks: string[] = [];
+  
+    const imgLinks: Array<{url: string, cloudinary_url?: string}> = [];
     await Promise.all(
       images.map(async (image, index) => {
         const filename = `image_${Date.now()}_${index}.jpg`;
         const newUri = `${folderUri}/${filename}`;
         await FileSystem.copyAsync({ from: image.uri, to: newUri });
-        imgLinks.push(newUri);
+        imgLinks.push({
+          url: newUri,
+          cloudinary_url: image.cloudinaryUrl
+        });
       })
     );
-
+  
     return imgLinks;
   };
+  
 
   const handleSubmit = async () => {
     if (!title.trim() && !content.trim()) {
@@ -184,11 +193,11 @@ const Content = () => {
     try {
       const savedImgPaths = await saveImgsToLocalStorage();
 
-      const images = savedImgPaths.map((url) => ({
-        url,
+      const images = savedImgPaths.map((img) => ({
+        url: img.url,
         public_id: "",
-        cloudinary_url: ""
-       }));
+        cloudinary_url: img.cloudinary_url || ""
+      }));
 
       const post_date = receiveDate.toISOString();
 
