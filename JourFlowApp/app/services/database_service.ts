@@ -377,7 +377,7 @@ const DatabaseService = {
             )
             .join(",");
           await this.db.execAsync(
-            `INSERT INTO images (id, post_id, url, public_id, cloudinary_url, sync_status) 
+            `INSERT INTO images (id, post_id, url, public_id, cloudinary_url) 
              VALUES ${imageValues}`
           );
         }

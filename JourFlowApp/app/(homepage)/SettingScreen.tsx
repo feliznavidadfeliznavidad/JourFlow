@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View, ActivityIndicator } from "react-native";
 import React, { useCallback, useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import FontLoader from "../services/FontsLoader";
@@ -12,7 +12,7 @@ import SyncDbService from "../services/syncDb_service";
 import { useAuthorization } from "../services/AuthProvider";
 import { getItem } from "../services/async_storage";
 
-interface UserInfo{
+interface UserInfo {
   username: string,
   email: string,
   avt_url: string,
@@ -21,6 +21,7 @@ interface UserInfo{
 const SettingScreen = () => {
   const { signOut } = useAuthorization();
   const [userInfo, setUserInfo] = useState<UserInfo>();
+  const [isBackingUp, setIsBackingUp] = useState(false);
   
   useEffect(() => {
     fetchUserProfile();
@@ -34,10 +35,10 @@ const SettingScreen = () => {
       throw error;
     }
   };
-  const handlePress = () => {
-    alert("Comming Soon!");
-  };
 
+  const handlePress = () => {
+    alert("Coming Soon!");
+  };
 
   const handleSignOutPress = () => {
     signOut();
@@ -65,76 +66,65 @@ const SettingScreen = () => {
   };
 
   const handleBackup = async () => {
+    setIsBackingUp(true);
     try {
-        const userId = await getItem("userId");
-        const not_sync_posts = await DatabaseService.getNotSyncPosts();
-        const not_sync_images = await DatabaseService.getNotSyncImages();
+      const userId = await getItem("userId");
+      const not_sync_posts = await DatabaseService.getNotSyncPosts();
+      const not_sync_images = await DatabaseService.getNotSyncImages();
+      const new_update_posts = await DatabaseService.getUpdatedPosts();
+      const delete_posts = await DatabaseService.getDeletePosts();
 
-        const new_update_posts = await DatabaseService.getUpdatedPosts();
+      if (delete_posts.length > 0) {
+        console.log("syncing delete posts");
+        console.log(delete_posts);
+        await SyncDbService.deletePosts(delete_posts);
+      }
 
+      if (not_sync_posts.length > 0) {
+        console.log("syncing posts");
+        console.log(not_sync_posts);
+        await SyncDbService.addPosts(not_sync_posts);
+      }
 
-        const delete_posts = await DatabaseService.getDeletePosts();
+      if (not_sync_images.length > 0) {
+        console.log("syncing images");
+        console.log(not_sync_images);
+        await SyncDbService.addImages(not_sync_images);
+      }
 
+      if (new_update_posts.length > 0) {
+        console.log("syncing update posts");
+        console.log(new_update_posts);
+        await SyncDbService.updatePosts(new_update_posts);
+      }
 
-
-        if (delete_posts.length > 0) {
-          console.log("syncing delete posts");
-          console.log(delete_posts);
-          await SyncDbService.deletePosts(delete_posts);
-        }
-
-        if (not_sync_posts.length > 0) {
-          console.log("syncing posts");
-          console.log(not_sync_posts);
-          await SyncDbService.addPosts(not_sync_posts);
-        }
-
-        if (not_sync_images.length > 0) {
-          console.log("syncing images");
-          console.log(not_sync_images);
-          await SyncDbService.addImages(not_sync_images);
-
-        }
-
-        if (new_update_posts.length > 0) {
-          console.log("syncing update posts");
-          console.log(new_update_posts);
-          await SyncDbService.updatePosts(new_update_posts);
-        }
-
-
-        await SyncDbService.getPosts(userId);
-
-        alert("Backup process completed successfully.");
+      await SyncDbService.getPosts(userId);
+      alert("Backup process completed successfully.");
     } catch (error: any) {
-        alert(error.message);
-        throw error;
+      alert(error.message);
+      throw error;
+    } finally {
+      setIsBackingUp(false);
     }
   };
-
 
   const printData = useCallback(async () => {
     try {
       const posts = await DatabaseService.getPosts();
       console.log("Posts:", posts);
-
-
     } catch (error) {
       handleError(error, "printing data");
     }
-  }, [handleError]);
+  }, []);
 
   const printUser = useCallback(async () => {
     try {
       const users = await DatabaseService.getUsers();
       console.log("Users:", users);
-
-      // Optionally refresh marked dates after insertion
-      // await loadMarkedDates();
     } catch (error) {
       handleError(error, "printing data");
     }
-  }, [handleError]);
+  }, []);
 
   const addData = useCallback(async () => {
     try {
@@ -143,7 +133,7 @@ const SettingScreen = () => {
     } catch (error) {
       handleError(error, "printing data");
     }
-  }, [handleError]);
+  }, []);
 
   return (
     <FontLoader>
@@ -196,11 +186,19 @@ const SettingScreen = () => {
             </Pressable>
 
             <Pressable
-              style={styles.settingItem}
-              onPress={() => handleBackup()}
+              style={[styles.settingItem, isBackingUp && styles.disabledItem]}
+              onPress={isBackingUp ? undefined : handleBackup}
+              disabled={isBackingUp}
             >
-              <Feather name="cloud" size={24} color="black" />
-              <Text style={styles.settingText}>Backup / Restore</Text>
+              <Feather name="cloud" size={24} color={isBackingUp ? "#999" : "black"} />
+              <View style={styles.settingItemContent}>
+                <Text style={[styles.settingText, isBackingUp && styles.disabledText]}>
+                  Backup / Restore
+                </Text>
+                {isBackingUp && (
+                  <ActivityIndicator size="small" color="#9747FF" style={styles.loader} />
+                )}
+              </View>
             </Pressable>
 
             <Pressable style={styles.settingItem} onPress={() => handlePress()}>
@@ -213,9 +211,7 @@ const SettingScreen = () => {
               <Text style={styles.settingText}>Export</Text>
             </Pressable>
 
-            <Pressable
-              style={styles.settingItem}
-              onPress={() => handlePress()}>
+            <Pressable style={styles.settingItem} onPress={() => handlePress()}>
               <Feather name="lock" size={24} color="black" />
               <Text style={styles.settingText}>Lock Screen</Text>
             </Pressable>
@@ -244,14 +240,17 @@ const SettingScreen = () => {
               <Feather name="code" size={24} color="black" />
               <Text style={styles.settingText}>Print Data</Text>
             </Pressable>
+
             <Pressable style={styles.settingItem} onPress={() => printUser()}>
               <Feather name="code" size={24} color="black" />
               <Text style={styles.settingText}>Print User</Text>
             </Pressable>
+
             <Pressable style={styles.settingItem} onPress={() => addData()}>
               <Feather name="code" size={24} color="black" />
               <Text style={styles.settingText}>Add Data</Text>
             </Pressable>
+
             <Pressable
               style={styles.settingItem}
               onPress={() => handleLoadAllImgsPress()}
@@ -265,8 +264,6 @@ const SettingScreen = () => {
     </FontLoader>
   );
 };
-
-export default SettingScreen;
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -362,10 +359,28 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   placeholder: {
-    width: 40,  // Matches backButton width for centering
+    width: 40,
+  },
+  settingItemContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  loader: {
+    marginLeft: 10,
+  },
+  disabledItem: {
+    opacity: 0.7,
+  },
+  disabledText: {
+    color: '#999',
   },
 });
 
-function handleError(error: unknown, arg1: string) {
-  throw new Error("Function not implemented.");
+function handleError(error: unknown, action: string) {
+  console.error(`Error while ${action}:`, error);
+  alert(`An error occurred while ${action}`);
 }
+
+export default SettingScreen;
