@@ -389,11 +389,19 @@ const DatabaseService = {
 
   async softDeletePost(postId: string): Promise<void> {
     try {
-      await this.db.runAsync("UPDATE posts SET sync_status = ? WHERE id = ? AND sync_status != ?", [
-        post_status.deleted,
-        postId,
-        post_status.not_sync,
-      ]);
+      const postStatus = await this.db.getFirstAsync<{
+        sync_status: number;
+      }>(`SELECT sync_status FROM posts WHERE id = ?`, [postId]);
+
+      if(postStatus?.sync_status === post_status.synced){
+        await this.db.runAsync("UPDATE posts SET sync_status = ? WHERE id = ? AND sync_status != ?", [
+          post_status.deleted,
+          postId,
+          post_status.not_sync,
+        ]);
+      }else{
+        await this.db.runAsync("DELETE FROM posts WHERE id = ?", [postId]);
+      }
     } catch (error) {
       throw error;
     }

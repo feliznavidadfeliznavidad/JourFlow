@@ -94,78 +94,35 @@ const Content = () => {
     setIsEditing(true);
   };
 
+
   const handleUpdate = async () => {
-    console.warn("handleUpdate started");
-  
     if (!title.trim() && !content.trim()) {
-      console.warn("Validation failed: Empty title and content");
       Alert.alert("Error", "Please enter a title or content");
       return;
     }
-  
     try {
-      console.warn("Calling saveImgsToLocalStorage...");
       const savedImgPaths = await saveImgsToLocalStorage();
-      console.warn("saveImgsToLocalStorage result:", savedImgPaths);
-  
+
       const images = savedImgPaths.map((url) => ({
         url,
         public_id: "",
         cloudinary_url: ""
-      }));
-      console.warn("Formatted images:", images);
-  
+       }));
+
       const updateData = { title, content, images };
-      console.warn("Update data prepared:", updateData);
-  
+
       if (currentPostId) {
-        console.warn("Updating post with ID:", currentPostId);
         await DatabaseService.updatePost(currentPostId, updateData);
-  
-        console.warn("Post updated successfully");
+
         setIsEditing(false);
         Alert.alert("Success", "Post updated successfully");
-  
-        console.warn("Checking if post exists...");
         await checkExists();
-      } else {
-        console.warn("No currentPostId provided");
       }
-    } catch (error: any) {
-      console.warn("Error caught:", error.message);
+    } catch (error) {
       Alert.alert("Error", "Failed to update post. Please try again.");
       throw error;
     }
   };
-
-  // const handleUpdate = async () => {
-  //   if (!title.trim() && !content.trim()) {
-  //     Alert.alert("Error", "Please enter a title or content");
-  //     return;
-  //   }
-  //   try {
-  //     const savedImgPaths = await saveImgsToLocalStorage();
-
-  //     const images = savedImgPaths.map((url) => ({
-  //       url,
-  //       public_id: "",
-  //       cloudinary_url: ""
-  //      }));
-
-  //     const updateData = { title, content, images };
-
-  //     if (currentPostId) {
-  //       await DatabaseService.updatePost(currentPostId, updateData);
-
-  //       setIsEditing(false);
-  //       Alert.alert("Success", "Post updated successfully");
-  //       await checkExists();
-  //     }
-  //   } catch (error) {
-  //     Alert.alert("Error", "Failed to update post. Please try again.");
-  //     throw error;
-  //   }
-  // };
 
   const handleDelete = async () => {
     try {

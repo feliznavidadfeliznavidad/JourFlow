@@ -95,8 +95,7 @@ class SyncDbService {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(datas),
-        },
-        "Posts added successfully!"
+        }
       );
       console.log("API call completed successfully!");
   
