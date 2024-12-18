@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using JourFlow_BE.Dtos;
 using JourFlow_BE.Mappers;
 using JourFlow_BE.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NuGet.Protocol;
@@ -21,8 +22,9 @@ namespace JourFlow_BE.Controllers
             _dbcontext = dbContext;
         }
 
-
+        
         [HttpGet("get/{userId}")]
+        [Authorize]
         public IActionResult GetPostsByUserId([FromRoute] Guid userId)
         {
             var posts = (from post in _dbcontext.Posts 
@@ -46,6 +48,7 @@ namespace JourFlow_BE.Controllers
         }
 
         [HttpPost("add-image")]
+        [Authorize]
         public async Task<IActionResult> AddImage([FromBody] List<ImgsDto>  images)
         {
             Console.WriteLine("AddImages");
@@ -73,6 +76,7 @@ namespace JourFlow_BE.Controllers
             return Ok("success");
         }
         [HttpPost("add-post")]
+        [Authorize]
         public async Task<IActionResult> AddPost([FromBody] List<PostsDto>  posts)
         {
             Console.WriteLine("AddPosts");
@@ -101,6 +105,7 @@ namespace JourFlow_BE.Controllers
         }
 
         [HttpPut("update")]
+        [Authorize]
         public async Task<IActionResult> UpdatePost([FromBody] List<PostsDto> posts)
         {
             if (posts == null || !posts.Any())
@@ -138,6 +143,7 @@ namespace JourFlow_BE.Controllers
         }
 
         [HttpDelete("delete")]
+        [Authorize]
         public async Task<IActionResult> DeletePosts([FromBody] List<PostsDto> posts)
         {
             if (posts == null || !posts.Any())

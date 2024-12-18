@@ -55,7 +55,14 @@ class SyncDbService {
 
   static async getPosts(userId: string): Promise<void> {
     try {
-      const response = await fetch(`${SERVER_API}/get/${userId}`);
+      const jwt = await getItem("jwt");
+      const response = await fetch(`${SERVER_API}/get/${userId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${jwt}`,
+        },
+      });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -75,8 +82,9 @@ class SyncDbService {
 
   static async addImages(datas: Image[]): Promise<void> {
     try {
+      const jwt = await getItem("jwt");
       console.log("Initial datas:", datas); // Kiểm tra dữ liệu đầu vào
-  
+
       // Gọi syncImages và log kết quả
       datas = await this.syncImages(datas);
       console.log("After syncImages, datas:", datas);
@@ -93,6 +101,7 @@ class SyncDbService {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${jwt}`,
           },
           body: JSON.stringify(datas),
         }
@@ -127,14 +136,14 @@ class SyncDbService {
   //   await DatabaseService.updateImageSyncStatus();
   // }
   static async addPosts(datas: Post[]): Promise<void> {
-
-
+    const jwt = await getItem("jwt");
     await this.fetchWithErrorHandling(
       `${SERVER_API}/add-post`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${jwt}`,
         },  
         body: JSON.stringify(datas),
       }
@@ -145,12 +154,14 @@ class SyncDbService {
   }
 
   static async updatePosts(posts: Post[]): Promise<void> {
+    const jwt = await getItem("jwt");
     await this.fetchWithErrorHandling(
       `${SERVER_API}/update`,
       {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${jwt}`,
         },
         body: JSON.stringify(posts),
       }
@@ -160,12 +171,14 @@ class SyncDbService {
   }
 
   static async deletePosts(posts: Post[]): Promise<void> {
+    const jwt = await getItem("jwt");
     await this.fetchWithErrorHandling(
       `${SERVER_API}/delete`,
       {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${jwt}`,
         },
         body: JSON.stringify(posts),
       }

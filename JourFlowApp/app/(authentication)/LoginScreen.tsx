@@ -27,7 +27,7 @@ import uuid from "react-native-uuid";
 
 // iosClientId of David
 const iosClientId =
-  "1007829901637-iif9lnnsfvtnmoddt5fr1h1mcrmb93po.apps.googleusercontent.com";
+  "1007829901637-oa4hla8287qmfrr42k272aq2bou7abvm.apps.googleusercontent.com";
   
   
 const { width, height } = Dimensions.get("window");
@@ -65,7 +65,7 @@ const LoginScreen = () => {
 
       const userIdentity = await response.json();
 
-      await signIn( userIdentity.token, userIdentity.userId);
+      await signIn( userIdentity.token, userIdentity.userId, userIdentity.token);
       await router.replace({
         pathname: "(homepage)/HomeScreen",
       });

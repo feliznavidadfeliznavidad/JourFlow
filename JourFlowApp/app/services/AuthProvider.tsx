@@ -7,7 +7,7 @@ interface AuthContextType {
   status: "idle" | "signIn" | "signOut";
   authToken: string | null;
   userId: string | null;
-  signIn: (token: string, userId: string) => void;
+  signIn: (token: string, userId: string, jwt: string) => void;
   signOut: () => void;
 }
 
@@ -52,8 +52,9 @@ export const AuthProvider = (props: any) => {
   }, []);
   const actions = React.useMemo(
     () => ({
-      signIn: async (token: string, userId: string) => {
+      signIn: async (token: string, userId: string, jwt: string) => {
         await setItem("token", token); // Save the token first
+        await setItem("jwt", jwt);
         await setItem("userId", userId);
         dispatch({ type: "SIGN_IN", token }); // Then update the state
       },
@@ -62,6 +63,7 @@ export const AuthProvider = (props: any) => {
         dispatch({ type: "SIGN_OUT" });
         await removeItem("token");
         await removeItem("userId");
+        await removeItem("jwt");
       },
     }),
     [state, dispatch]
