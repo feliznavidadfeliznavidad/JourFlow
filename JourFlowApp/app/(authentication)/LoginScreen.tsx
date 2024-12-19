@@ -8,7 +8,6 @@ import {
   Animated,
   SafeAreaView,
   Dimensions,
-  Alert,
 } from "react-native";
 import "../../assets/fonts/Kalamfont/fonts";
 import * as WebBrowser from "expo-web-browser";
@@ -19,16 +18,9 @@ import { useAuthorization } from "../services/AuthProvider";
 import { getItem, setItem,removeItem } from "../services/async_storage";
 import { router, usePathname } from "expo-router";
 import SyncDbService from "../services/syncDb_service";
-import uuid from "react-native-uuid";
 
-
-// const iosClientId =
-//   "1007829901637-oa4hla8287qmfrr42k272aq2bou7abvm.apps.googleusercontent.com";
-
-// iosClientId of David
 const iosClientId =
-  "1007829901637-oa4hla8287qmfrr42k272aq2bou7abvm.apps.googleusercontent.com";
-  
+  "1007829901637-iif9lnnsfvtnmoddt5fr1h1mcrmb93po.apps.googleusercontent.com";
   
 const { width, height } = Dimensions.get("window");
 const LoginScreen = () => {
@@ -38,7 +30,6 @@ const LoginScreen = () => {
   const { signIn, status } = useAuthorization();
   useEffect(() => {
     const initState = async () => {
-      // const authToken = await getItem("token");
       await removeItem("token");
     };
     initState();
@@ -49,9 +40,6 @@ const LoginScreen = () => {
   const [request, response, promptAsync] = Google.useAuthRequest(config);
   const handleJWT = async (googleToken: any) => {
     var response = await fetch("http://localhost:5004/api/auth/google-signin", {
-      // var response = await fetch(
-      //   "http://192.168.2.171:5004/api/auth/google-signin",
-      //   {
       method: "POST",
       headers: {
         Accept: "application/json",

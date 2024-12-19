@@ -1,4 +1,4 @@
-import { SafeAreaView, StatusBar, StyleSheet, Text, View } from 'react-native'
+import { SafeAreaView, StyleSheet } from 'react-native'
 import React from 'react'
 import PickFeeling from '../components/PickFeeling'
 import FontLoader from '../services/FontsLoader'

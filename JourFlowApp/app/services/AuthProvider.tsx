@@ -2,7 +2,6 @@ import * as React from "react";
 
 import {getItem , setItem , removeItem} from "./async_storage";
 
-// Mở rộng interface để bao gồm userId
 interface AuthContextType {
   status: "idle" | "signIn" | "signOut";
   authToken: string | null;
@@ -53,10 +52,10 @@ export const AuthProvider = (props: any) => {
   const actions = React.useMemo(
     () => ({
       signIn: async (token: string, userId: string, jwt: string) => {
-        await setItem("token", token); // Save the token first
+        await setItem("token", token);
         await setItem("jwt", jwt);
         await setItem("userId", userId);
-        dispatch({ type: "SIGN_IN", token }); // Then update the state
+        dispatch({ type: "SIGN_IN", token }); 
       },
 
       signOut: async () => {

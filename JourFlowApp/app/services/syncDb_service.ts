@@ -2,7 +2,6 @@ import { Alert } from "react-native";
 import { IconPath } from "../../assets/icon/icon";
 import DatabaseService from "./database_service";
 import { uploadImageToCloudinary } from "./CloudinaryService";
-import post_status from "../../assets/post_status";
 import { getItem } from "./async_storage";
 
 const SERVER_API = "http://localhost:5004/api/posts";
@@ -115,26 +114,7 @@ class SyncDbService {
       console.error("Error in addImages:", error);
     }
   }
-  
-  // static async addImages(datas: Image[]): Promise<void> {
 
-  //   datas = await this.syncImages(datas);
-
-
-  //   await this.fetchWithErrorHandling(
-  //     `${SERVER_API}/add-image`,
-  //     {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },  
-  //       body: JSON.stringify(datas),
-  //     },
-  //     "Posts added successfully!"
-  //   );
-
-  //   await DatabaseService.updateImageSyncStatus();
-  // }
   static async addPosts(datas: Post[]): Promise<void> {
     const jwt = await getItem("jwt");
     await this.fetchWithErrorHandling(
@@ -196,10 +176,8 @@ class SyncDbService {
           const cloudinaryUrl = await uploadImageToCloudinary(image.url);
           
           if (cloudinaryUrl) {
-            // Extract public_id from Cloudinary URL
             const publicId = cloudinaryUrl.split('/').pop()?.split('.')[0] || '';
             
-            // Update local image record with Cloudinary info
             await DatabaseService.updateImageCloudinaryInfo(
               image.id,
               publicId,

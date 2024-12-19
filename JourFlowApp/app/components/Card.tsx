@@ -5,7 +5,6 @@ import {
   View,
   Image,
   Pressable,
-  Animated,
   TouchableOpacity,
   Alert,
 } from "react-native";
@@ -118,9 +117,7 @@ const Card: React.FC<Post> = (post) => {
   };
 
   const handlePress = () => {
-    // Kiểm tra thêm thời gian từ khi bắt đầu swipe
     const timeSinceSwipeStart = Date.now() - swipeStartTimeRef.current;
-
     if (!isSwipeActive && timeSinceSwipeStart > 200) {
       router.push({
         pathname: "DetailScreen",
@@ -210,7 +207,6 @@ const Card: React.FC<Post> = (post) => {
   );
 };
 
-// Styles remain the same
 const styles = StyleSheet.create({
   cardContainer: {
     width: "90%",

@@ -10,7 +10,6 @@ export const ImageList: React.FC<ImageListProps> = ({ images }) => {
 
   const defaultImage = "https://s3v2.interdata.vn:9000/s3-586-15343-storage/dienthoaigiakho/wp-content/uploads/2024/01/16101418/trend-avatar-vo-danh-14.jpg";
   
-  // Tạo 2 Set riêng để theo dõi các URL lỗi
   const [failedPrimaryUrls, setFailedPrimaryUrls] = useState<Set<string>>(new Set());
   const [failedCloudinaryUrls, setFailedCloudinaryUrls] = useState<Set<string>>(new Set());
 
@@ -35,15 +34,12 @@ export const ImageList: React.FC<ImageListProps> = ({ images }) => {
             source={{ uri: getImageSource(item) }}
             style={{ width: 200, height: 200 }}
             onError={() => {
-              // Nếu URL chính bị lỗi
               if (!failedPrimaryUrls.has(item.uri)) {
                 setFailedPrimaryUrls(prev => new Set(prev).add(item.uri));
-                // Thử load lại với cloudinaryUrl
                 if (item.cloudinaryUrl) {
                   return;
                 }
               }
-              // Nếu cloudinaryUrl bị lỗi
               if (item.cloudinaryUrl && !failedCloudinaryUrls.has(item.cloudinaryUrl)) {
                 setFailedCloudinaryUrls(prev => new Set(prev).add(item.cloudinaryUrl!));
               }

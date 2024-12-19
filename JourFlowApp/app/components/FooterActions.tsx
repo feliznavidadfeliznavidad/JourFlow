@@ -1,4 +1,3 @@
-// Footer.tsx
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import Feather from "@expo/vector-icons/Feather";

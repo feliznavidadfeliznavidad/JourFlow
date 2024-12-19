@@ -11,7 +11,7 @@ const FontLoader: React.FC<FontLoaderProps> = ({ children }) => {
 
   useEffect(() => {
     const loadFonts = async () => {
-      await Font.loadAsync(fonts); // Tải tất cả các font từ file fonts.ts
+      await Font.loadAsync(fonts); 
       setFontsLoaded(true);
     };
 
@@ -19,10 +19,10 @@ const FontLoader: React.FC<FontLoaderProps> = ({ children }) => {
   }, []);
 
   if (!fontsLoaded) {
-    return null; // Hoặc bạn có thể hiển thị một loading spinner
+    return null;
   }
 
-  return <>{children}</>; // Trả về children khi fonts đã được tải
+  return <>{children}</>;
 };
 
 export default FontLoader;

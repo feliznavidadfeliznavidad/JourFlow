@@ -1,5 +1,4 @@
-// import { CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET } from "@env";
-import axios, { AxiosError } from "axios";
+import axios from "axios";
 
 const CLOUDINARY_CLOUD_NAME = 'dlkarsq04'
 const CLOUDINARY_UPLOAD_PRESET = 'JourFlowApp'

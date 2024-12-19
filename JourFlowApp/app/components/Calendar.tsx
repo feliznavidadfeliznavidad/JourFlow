@@ -54,7 +54,6 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
   const [isToday, setIsToday] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Centralized error handling
   const handleError = useCallback((error: unknown, context: string) => {
     console.error(`Error while ${context}:`, error);
     Alert.alert("Error", `An error occurred while ${context}`);
@@ -73,12 +72,9 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
     initializeApp();
   }, [reloadKey]);
 
-  // Custom day component with improved rendering and interaction
   const DayComponent: React.FC<DayComponentProps> = React.memo(
     ({ date, marking }) => {
       const currentDate = new Date(date.timestamp);
-
-      // Memoized styling based on date properties
       const dayStyles = useMemo(() => {
         const isWeekend =
           currentDate.getDay() === 0 || currentDate.getDay() === 6;
@@ -94,10 +90,8 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
         };
       }, [currentDate, today]);
 
-      // Render dots with memoization
       const renderDots = useCallback(() => {
         if (!marking?.dot) return null;
-
         const dots = Array.isArray(marking.dot) ? marking.dot : [marking.dot];
 
         return (
@@ -142,7 +136,6 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
     }
   );
 
-  // Load marked dates from database
   const loadMarkedDates = useCallback(async () => {
     try {
       const posts: Post[] = await DatabaseService.getPosts();
@@ -175,10 +168,8 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
     }
   }, [handleError]);
 
-  // Handle day press with comprehensive logic
   const handleDayPress = useCallback(
     (postDate: Date) => {
-      // Prevent future date selection
       if (isAfter(postDate, today)) {
         Alert.alert("Error", "Please select a date before today");
         return;
@@ -189,13 +180,11 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
       DatabaseService.hasPostsOnDate(postDate)
         .then((exists) => {
           if (exists) {
-            // Navigate to detail screen if post already exists
             router.push({
               pathname: "DetailScreen",
               params: { formattedDate },
             });
           } else {
-            // Navigate to feeling selection for new entries
             router.push({
               pathname: "PickFeelingScreen",
               params: { formattedDate },
@@ -207,7 +196,6 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
     [today, handleError]
   );
 
-  // Check if today's entry exists
   const checkTodayEntry = useCallback(async () => {
     try {
       const exists = await DatabaseService.hasPostsOnDate(today);
@@ -217,7 +205,6 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
     }
   }, [today, handleError]);
 
-  // Calendar theme with consistent styling
   const calendarTheme: Theme = useMemo(
     () => ({
       textMonthFontFamily: "kalam",
@@ -232,7 +219,6 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
     []
   );
 
-  // Handle refresh
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -245,7 +231,6 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({ reloadKey }) => {
     }
   }, [loadMarkedDates, checkTodayEntry, handleError]);
 
-  // Navigation to settings
   const handleSettingPress = useCallback(() => {
     router.push("SettingScreen");
   }, []);

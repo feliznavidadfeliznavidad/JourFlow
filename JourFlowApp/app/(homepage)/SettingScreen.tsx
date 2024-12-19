@@ -3,8 +3,6 @@ import React, { useCallback, useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import FontLoader from "../services/FontsLoader";
 import Feather from "@expo/vector-icons/Feather";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { Image } from "react-native";
 import { router } from "expo-router";
 import DatabaseService from "../services/database_service";

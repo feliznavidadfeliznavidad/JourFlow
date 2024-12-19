@@ -4,7 +4,6 @@ import { router, useLocalSearchParams } from "expo-router";
 import LottieView from "lottie-react-native";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import icons from "../../assets/icon/icon";
-import { parse } from "date-fns";
 import date_format from "../services/dateFormat_service";
 import Feather from "@expo/vector-icons/Feather";
 

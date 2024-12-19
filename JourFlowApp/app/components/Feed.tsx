@@ -1,7 +1,6 @@
 import {
   StyleSheet,
   View,
-  Text,
   SafeAreaView,
   ScrollView,
   Pressable,
@@ -10,10 +9,10 @@ import {
 } from "react-native";
 import React, { useEffect, useState, useCallback } from "react";
 import Card from "./Card";
-import icons, { IconPath } from "../../assets/icon/icon";
+import { IconPath } from "../../assets/icon/icon";
 import DatabaseService from "../services/database_service";
 import Feather from "@expo/vector-icons/Feather";
-import { router, usePathname } from "expo-router";
+import { router } from "expo-router";
 
 interface Post {
   id: string;
@@ -30,7 +29,6 @@ const Feed = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Centralized error handling
   const handleError = useCallback((error: unknown, context: string) => {
     console.error(`Error while ${context}:`, error);
     Alert.alert("Error", `An error occurred while ${context}`);
@@ -45,7 +43,6 @@ const Feed = () => {
     }
   }, [handleError]);
 
-  // Handle refresh
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -90,8 +87,8 @@ const Feed = () => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={["#000"]} // You can customize the loading spinner color
-              tintColor="#000" // For iOS
+              colors={["#000"]} 
+              tintColor="#000"
             />
           }
         >
@@ -110,7 +107,6 @@ const Feed = () => {
               />
             </View>
           ))}
-          {/* Add some bottom padding for better scrolling */}
           <View style={styles.scrollPadding} />
         </ScrollView>
       </View>
@@ -145,10 +141,10 @@ const styles = StyleSheet.create({
   },
   scroll: {
     width: "100%",
-    flex: 1, // Add flex: 1 to ensure the ScrollView takes up remaining space
+    flex: 1,
   },
   scrollPadding: {
-    height: 20, // Add some bottom padding for better scrolling experience
+    height: 20, 
   },
   feedContainer: {
     height: "100%",

@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
 import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { IconPath } from "../../assets/icon/icon";
@@ -40,8 +40,8 @@ const SearchScreen = () => {
     const filteredPosts = orgPosts.filter((post) => {
       const searchText = searchResult.toLowerCase();
       return (
-        post.title.toLowerCase().includes(searchText) || // Kiểm tra nếu title chứa chuỗi tìm kiếm
-        post.content.toLowerCase().includes(searchText) // Kiểm tra nếu content chứa chuỗi tìm kiếm
+        post.title.toLowerCase().includes(searchText) ||
+        post.content.toLowerCase().includes(searchText) 
       );
     });
     setFilterPosts(filteredPosts);

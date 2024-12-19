@@ -18,8 +18,6 @@ import { Header } from "../components/HeaderDetail";
 import { ImageList } from "../components/ImageList";
 import { ContentInput } from "../components/ContentEditor";
 import { Footer } from "../components/FooterActions";
-import { useAuthorization } from "../services/AuthProvider";
-import { getItem } from "../services/async_storage";
 
 interface Post {
   id: string;

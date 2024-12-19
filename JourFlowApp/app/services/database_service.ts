@@ -3,6 +3,7 @@ import { IconPath } from "../../assets/icon/icon";
 import uuid from "react-native-uuid";
 import post_status from "../../assets/post_status";
 import { getItem } from "./async_storage";
+
 interface Post {
   id: string;
   user_id: string;
@@ -531,8 +532,6 @@ const DatabaseService = {
           alert("Image added successfully");
         }
       }
-
-      // Commit transaction nếu tất cả các thao tác thành công
       await this.db.runAsync("COMMIT");
     } catch (error) {
       await this.db.runAsync("ROLLBACK");

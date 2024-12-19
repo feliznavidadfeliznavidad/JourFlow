@@ -5,7 +5,7 @@ import FontLoader from "../services/FontsLoader";
 import CustomCalendar from "../components/Calendar";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import Feed from "../components/Feed";
-import { AuthProvider, useAuthorization } from "../services/AuthProvider";
+import { useAuthorization } from "../services/AuthProvider";
 import { useEffect } from "react";
 import {getItem ,setItem ,removeItem ,} from "../services/async_storage";
 const Tab = createMaterialTopTabNavigator();
