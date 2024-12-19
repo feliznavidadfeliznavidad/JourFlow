@@ -1,4 +1,3 @@
-# Ignore node_modules for JourFlowApp
 JourFlowApp/node_modules/
 JourFlowApp/ios/
 JourFlowApp/.vscode/
@@ -9,17 +8,13 @@ JourFlowApp/app.json
 JourFlowApp/package.json
 JourFlowApp/.env
 
-# Ignore build and log files for ASP.NET
 JourFLow_BE/.vscode/
+JourFLow_BE/Migrations/
 JourFLow_BE/JourFlow_BE.sln
-JourFLow_BE/JourFlow_BE/bin/
-JourFLow_BE/JourFlow_BE/bin/Debug
-JourFLow_BE/JourFlow_BE/obj/
-JourFLow_BE/JourFlow_BE/appsettings.json
-JourFLow_BE/JourFlow_BE/Migrations
+JourFLow_BE/bin/
+JourFLow_BE/bin/Debug
+JourFLow_BE/obj/
+JourFLow_BE/appsettings.json
 
-JourFLow_BE/JourFlow_BE/bin/
-
-# Ignore system files
 .DS_Store
 Thumbs.db
