@@ -34,13 +34,6 @@ namespace JourFlow_BE.Controllers
             try 
             { 
                 var payload = await _googleTokenService.ValidateGoogleToken(request.IdToken!);
-
-                // Console.WriteLine(payload.Email); 
-                // Console.WriteLine(payload.Picture); 
-                // Console.WriteLine(payload.Name); 
-                // Console.WriteLine(await _services.GenerateRefreshToken(payload.Email));
-                
-        
                 var currentUser = await _dbContext.Users!.FirstOrDefaultAsync(u=>u.Email == payload.Email);
                 Console.WriteLine("Current User" + currentUser?.Email);
                 if (currentUser == null)

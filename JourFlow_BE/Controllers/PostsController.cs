@@ -22,7 +22,6 @@ namespace JourFlow_BE.Controllers
             _dbcontext = dbContext;
         }
 
-        
         [HttpGet("get/{userId}")]
         [Authorize]
         public IActionResult GetPostsByUserId([FromRoute] Guid userId)
@@ -69,7 +68,6 @@ namespace JourFlow_BE.Controllers
 
             Console.WriteLine($"Filtered {newImgs.Count} imgs with sync_status == 0.");
 
-
             _dbcontext.IMGs!.AddRange(newImgs);
             await _dbcontext.SaveChangesAsync();
 
@@ -111,10 +109,7 @@ namespace JourFlow_BE.Controllers
             if (posts == null || !posts.Any())
                 return BadRequest("No posts provided.");
 
-            // Lấy danh sách Ids từ posts gửi lên
             var ids = posts.Where(p => p.sync_status == 2).Select(p => p.id).ToList();
-
-            // Tìm các bài viết trong database có Id khớp
             var existingPosts = await _dbcontext!.Posts!
                 .Where(p => ids.Contains(p.Id))
                 .ToListAsync();
@@ -122,7 +117,6 @@ namespace JourFlow_BE.Controllers
             if (!existingPosts.Any())
                 return NotFound("No matching posts found in the database.");
 
-            // Cập nhật dữ liệu cho các bài viết
             foreach (var post in posts)
             {
                 var existingPost = existingPosts.FirstOrDefault(p => p.Id == post.id);
@@ -135,10 +129,7 @@ namespace JourFlow_BE.Controllers
                     existingPost.UpdateDate = post.update_date;
                 }
             }
-
-            // Lưu các thay đổi vào database
             await _dbcontext.SaveChangesAsync();
-
             return Ok("success");
         }
 
@@ -149,30 +140,24 @@ namespace JourFlow_BE.Controllers
             if (posts == null || !posts.Any())
                 return BadRequest("No posts provided.");
 
-            // Lấy danh sách Ids từ posts gửi lên
             var idsToDelete = posts
-                .Where(p => p.sync_status == 3) // Chỉ lấy các bài viết có sync_status = 3
+                .Where(p => p.sync_status == 3) 
                 .Select(p => p.id)
                 .ToList();
 
             if (!idsToDelete.Any())
                 return BadRequest("No posts with sync_status = 3 provided.");
 
-            // Lấy các bài viết từ database có Id khớp
             var postsToDelete = await _dbcontext!.Posts!
                 .Where(p => idsToDelete.Contains(p.Id))
                 .ToListAsync();
 
             if (!postsToDelete.Any())
                 return NotFound("No matching posts found in the database.");
-
-            // Xóa các bài viết
             _dbcontext!.Posts!.RemoveRange(postsToDelete);
             await _dbcontext.SaveChangesAsync();
 
             return Ok("success");
-        }
-
-               
+        }               
     }
 }

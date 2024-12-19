@@ -1,5 +1,4 @@
-﻿// using KonceAuthentication.Models;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using JourFlow_BE.Models;
 using System.IdentityModel.Tokens.Jwt;
